@@ -1,14 +1,311 @@
 :root {
   color-scheme: light dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f6f8fb;
+  color: #17202a;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid #b9c3d0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #17202a;
+  font-weight: 650;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #eef3f8;
+}
+
+input,
+select {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #b9c3d0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #17202a;
+  padding: 8px 10px;
 }
 
 .lat-dashboard {
-  max-width: 960px;
+  width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 0 40px;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.app-header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+}
+
+.app-header p,
+section > p {
+  max-width: 780px;
+  color: #566779;
+}
+
+.tabs,
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.tabs {
+  border-bottom: 1px solid #d8e0e8;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+
+.tabs button.active {
+  background: #0a66c2;
+  border-color: #0a66c2;
+  color: #ffffff;
+}
+
+section h2 {
+  margin: 0 0 14px;
+  font-size: 22px;
+}
+
+section h3 {
+  margin: 24px 0 10px;
+  font-size: 16px;
+}
+
+.goal-grid,
+.info-grid,
+.form-grid,
+.toggle-grid,
+.diagnostic-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.goal-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-bottom: 16px;
+}
+
+.metric,
+.info-grid article,
+.diagnostic-grid div {
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.metric span,
+.metric strong {
+  display: block;
+}
+
+.metric span {
+  color: #566779;
+  font-size: 13px;
+}
+
+.metric strong {
+  margin-top: 4px;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  height: 7px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #d9e1ea;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: #0a66c2;
+}
+
+.toolbar {
+  margin: 14px 0;
+}
+
+.toolbar label,
+.form-grid label {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  color: #566779;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 16px;
+}
+
+.info-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.info-grid h3 {
+  margin-top: 0;
+}
+
+.toggle-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.toggle-grid label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.toggle-grid input {
+  width: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  background: #ffffff;
+}
+
+th,
+td {
+  border-bottom: 1px solid #d8e0e8;
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #566779;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.notice,
+.error {
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.notice {
+  background: #e3f2e8;
+  color: #145a2f;
+}
+
+.error,
+button.danger {
+  color: #a13d2d;
+}
+
+.error {
+  background: #fde8e2;
+}
+
+.danger-zone {
+  border-top: 1px solid #d8e0e8;
+  margin-top: 22px;
+  padding-top: 16px;
+}
+
+.diagnostic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.diagnostic-grid dt {
+  color: #566779;
+  font-size: 13px;
+}
+
+.diagnostic-grid dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    display: grid;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    background: #101418;
+    color: #edf2f7;
+  }
+
+  button,
+  input,
+  select,
+  .metric,
+  .info-grid article,
+  .diagnostic-grid div,
+  .toggle-grid label,
+  table {
+    border-color: #334154;
+    background: #1a222c;
+    color: #edf2f7;
+  }
+
+  button:hover {
+    background: #243140;
+  }
+
+  .app-header p,
+  section > p,
+  .metric span,
+  .toolbar label,
+  .form-grid label,
+  th,
+  .diagnostic-grid dt {
+    color: #aebdca;
+  }
+
+  .tabs,
+  th,
+  td,
+  .danger-zone {
+    border-color: #334154;
+  }
+
+  .bar {
+    background: #334154;
+  }
 }
