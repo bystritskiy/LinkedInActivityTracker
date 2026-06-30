@@ -1,0 +1,126 @@
+// English message catalog. Keys are flat, dot-namespaced strings. The `ru`
+// catalog is type-checked to contain exactly these keys.
+export const en = {
+  'app.name': 'LinkedIn Activity Tracker',
+
+  'common.save': 'Save',
+  'common.cancel': 'Cancel',
+  'common.delete': 'Delete',
+  'common.add': 'Add',
+  'common.close': 'Close',
+  'common.export': 'Export',
+  'common.import': 'Import',
+  'common.minutes': 'min',
+  'common.seconds': 'seconds',
+  'common.loading': 'Loading…',
+  'common.today': 'Today',
+  'common.done': 'Done',
+
+  'popup.title': 'Today',
+  'popup.openDashboard': 'Open dashboard',
+  'popup.addSSI': 'Add SSI',
+  'popup.editToday': 'Edit today',
+  'popup.exportReport': 'Export report',
+  'popup.pause': 'Pause tracking',
+  'popup.resume': 'Resume tracking',
+  'popup.paused': 'Tracking is paused',
+
+  'events.activeTime': 'Active time',
+  'events.reaction': 'Reactions',
+  'events.comment': 'Comments',
+  'events.reply': 'Replies',
+  'events.connection_request': 'Invitations',
+  'events.message': 'Messages',
+  'events.repost': 'Reposts',
+  'events.post': 'Posts',
+  'events.follow': 'Follows',
+  'events.profile_view': 'Profiles viewed',
+  'events.company_view': 'Companies viewed',
+  'events.job_view': 'Jobs viewed',
+
+  'nav.today': 'Today',
+  'nav.history': 'History',
+  'nav.ssi': 'SSI',
+  'nav.goals': 'Goals',
+  'nav.privacy': 'Privacy',
+  'nav.diagnostics': 'Diagnostics',
+
+  'dash.title': 'LinkedIn Activity Tracker',
+  'dash.today.heading': 'Today’s progress',
+  'dash.today.events': 'Events',
+  'dash.today.noEvents': 'No events recorded today.',
+  'dash.today.manualAdjust': 'Manual adjustment',
+  'dash.today.activeTimeLabel': 'Active time (minutes)',
+  'dash.today.eventTime': 'Time',
+  'dash.today.eventType': 'Type',
+  'dash.today.eventSource': 'Source',
+  'dash.source.automatic': 'auto',
+  'dash.source.manual': 'manual',
+
+  'dash.history.heading': 'History',
+  'dash.history.date': 'Date',
+  'dash.history.time': 'Time',
+  'dash.history.empty': 'No history yet.',
+
+  'dash.ssi.heading': 'Social Selling Index',
+  'dash.ssi.total': 'Total SSI',
+  'dash.ssi.professionalBrand': 'Establish your professional brand',
+  'dash.ssi.findRightPeople': 'Find the right people',
+  'dash.ssi.engageWithInsights': 'Engage with insights',
+  'dash.ssi.buildRelationships': 'Build relationships',
+  'dash.ssi.add': 'Add SSI entry',
+  'dash.ssi.date': 'Date',
+  'dash.ssi.noData': 'No SSI entries yet. Add today’s value to start the chart.',
+  'dash.ssi.disclaimer':
+    'Activity and SSI are shown side by side. This is a visual comparison only and does not imply cause and effect.',
+
+  'dash.goals.heading': 'Daily goals',
+  'dash.goals.saved': 'Goals saved.',
+  'dash.goals.activeMinutes': 'Active minutes',
+
+  'dash.privacy.heading': 'Privacy',
+  'dash.privacy.notice':
+    'This extension never performs actions on LinkedIn. It only records actions that you manually complete in your browser. All activity data is stored locally on your device.',
+  'dash.privacy.whatStored': 'What is stored',
+  'dash.privacy.whatStoredBody':
+    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, and the SSI you enter by hand.',
+  'dash.privacy.whatNotStored': 'What is never stored',
+  'dash.privacy.whatNotStoredBody':
+    'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
+  'dash.privacy.whereStored': 'Where it is stored',
+  'dash.privacy.whereStoredBody':
+    'Locally in your browser (chrome.storage.local). Nothing is ever sent to a server.',
+  'dash.privacy.tracking': 'Tracking toggles',
+  'dash.privacy.exportData': 'Export all data (JSON)',
+  'dash.privacy.importData': 'Import data (JSON)',
+  'dash.privacy.deleteAll': 'Delete all history',
+  'dash.privacy.deleteAllConfirm':
+    'Delete ALL tracked data permanently? This cannot be undone.',
+  'dash.privacy.deleted': 'All data deleted.',
+  'dash.privacy.storeCommentLength': 'Store comment length',
+  'dash.privacy.storeCommentMeaningful': 'Store “meaningful” flag for comments',
+  'dash.privacy.storeConnectionProfileUrl': 'Store profile URL for invitations',
+  'dash.privacy.storeConnectionDisplayName': 'Store display name for invitations',
+
+  'dash.diag.heading': 'Diagnostics',
+  'dash.diag.version': 'Extension version',
+  'dash.diag.timezone': 'Timezone',
+  'dash.diag.selectorHealth': 'Tracking status',
+  'dash.diag.log': 'Event log',
+  'dash.diag.empty': 'No diagnostic entries.',
+  'dash.diag.export': 'Export diagnostics',
+  'dash.diag.clear': 'Clear log',
+
+  'status.working': 'Working',
+  'status.needs_verification': 'Needs verification',
+  'status.unknown': 'Unknown',
+
+  'settings.idleThreshold': 'Idle threshold',
+  'settings.theme': 'Theme',
+  'settings.theme.system': 'System',
+  'settings.theme.light': 'Light',
+  'settings.theme.dark': 'Dark',
+  'settings.language': 'Language',
+} as const
+
+export type MessageKey = keyof typeof en

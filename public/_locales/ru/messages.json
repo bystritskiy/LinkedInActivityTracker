@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "LinkedIn Activity Tracker",
+    "description": "The name of the extension."
+  },
+  "appDescription": {
+    "message": "Локально и пассивно фиксирует вашу собственную активность в LinkedIn для ежедневного челленджа. Никогда не выполняет действия за вас. Все данные хранятся на вашем устройстве.",
+    "description": "The description of the extension."
+  }
+}

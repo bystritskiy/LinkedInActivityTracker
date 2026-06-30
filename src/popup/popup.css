@@ -1,0 +1,13 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.lat-popup {
+  width: 320px;
+  padding: 16px;
+}
