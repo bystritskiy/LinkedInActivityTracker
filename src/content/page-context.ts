@@ -5,7 +5,8 @@ import type { DetectionContext } from './detector'
 export function detectPageType(pathname: string = location.pathname): LinkedInPageType {
   const p = pathname.toLowerCase()
   if (p.startsWith('/feed/update/') || p.startsWith('/posts/')) return 'post'
-  if (p === '/feed' || p.startsWith('/feed/')) return 'feed'
+  // The 2026 UI serves the home feed at the bare root path.
+  if (p === '/' || p === '/feed' || p.startsWith('/feed/')) return 'feed'
   if (p.startsWith('/in/')) return 'profile'
   if (p.startsWith('/company/') || p.startsWith('/school/')) return 'company'
   if (p.startsWith('/search/')) return 'search'

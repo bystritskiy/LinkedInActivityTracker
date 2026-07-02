@@ -9,6 +9,7 @@ import {
   isCommentSubmitButton,
   isLikelyCommentInteraction,
   isReplyContext,
+  nearestEditorScope,
 } from '../selectors'
 import { debug, emitEvent, emitSelectorHealth, trace } from '../messaging'
 import { getSettings } from '../settings'
@@ -36,7 +37,9 @@ export class CommentDetector implements LinkedInDetector {
     }
 
     const editorScope =
-      btn.closest('[class*="comments-comment-box"], form, [class*="comment-box"]') ?? document.body
+      btn.closest('[class*="comments-comment-box"], form, [class*="comment-box"]') ??
+      nearestEditorScope(btn) ??
+      document.body
     const threadRoot =
       btn.closest('[class*="comments-comments-list"], [class*="comments"], article') ?? document.body
     const initialLocal = countMatching(threadRoot, COMMENT_ITEM_SELECTOR)
@@ -63,7 +66,9 @@ export class CommentDetector implements LinkedInDetector {
         trace('comment', 'confirmed', `kind=${kind};key=${key}`)
         debug('comment', kind, characterCount)
       },
-      undefined,
+      // Rendered comments arrive after a network round trip — allow a longer
+      // tail than the in-DOM toggles other detectors confirm against.
+      [200, 500, 1000, 1600, 2600],
       () => {
         trace(
           'comment',

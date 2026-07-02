@@ -58,9 +58,11 @@ export function describeAncestryForDiagnostics(el: Element, maxDepth = 8): strin
     const role = current.getAttribute('role')
     const ariaPressed = current.getAttribute('aria-pressed')
     const ariaExpanded = current.getAttribute('aria-expanded')
+    const ariaHasPopup = current.getAttribute('aria-haspopup')
     if (role) attrs.push(`role=${role}`)
     if (ariaPressed) attrs.push(`pressed=${ariaPressed}`)
     if (ariaExpanded) attrs.push(`expanded=${ariaExpanded}`)
+    if (ariaHasPopup) attrs.push(`haspopup=${ariaHasPopup}`)
     const dataNames = dataAttributeNames(current)
     if (dataNames.length > 0) attrs.push(`data=${dataNames.join('|')}`)
     const classes = compactClassList(current)
@@ -100,28 +102,71 @@ export interface PostContainer {
   isComment: boolean
 }
 
+const URN_CARRIER_SELECTOR = '[data-urn], [data-id], [data-activity-urn]'
+
+function urnOf(el: Element | null): string | null {
+  if (!el) return null
+  return (
+    el.getAttribute('data-urn') ??
+    el.getAttribute('data-id') ??
+    el.getAttribute('data-activity-urn')
+  )
+}
+
+/** Post id from within a container that carries no urn attributes itself
+ *  (2026 hashed-class feed markup): a descendant urn carrier or a permalink. */
+function descendantPostId(container: Element): string | null {
+  const carried = urnOf(container.querySelector(URN_CARRIER_SELECTOR))
+  if (carried) return carried
+  const link = container.querySelector<HTMLAnchorElement>(
+    'a[href*="/feed/update/"], a[href*="urn%3Ali%3Aactivity"], a[href*="urn:li:activity"]',
+  )
+  const match = link?.href.match(/urn(?::|%3A)li(?::|%3A)activity(?::|%3A)(\d+)/i)
+  return match ? `urn:li:activity:${match[1]}` : componentKeyPostId(container)
+}
+
+// 2026 feed rewrite, second layer: some items expose no urn attributes and no
+// permalink at all, but a child component's React `componentkey` still leaks a
+// stable post id, e.g.
+//   componentkey="translatable-commentary-FeTranslationUrn(...
+//     contentUrnShareUrn=ContentUrnShareUrn(..., shareUrn=ShareUrn(shareId=7478023198605893633)) ...)"
+// Member/profile urns (follow buttons etc.) are deliberately not matched.
+function componentKeyPostId(container: Element): string | null {
+  for (const el of container.querySelectorAll('[componentkey]')) {
+    const key = el.getAttribute('componentkey') ?? ''
+    const urn = key.match(/urn(?::|%3A)li(?::|%3A)(activity|share|ugcPost|groupPost)(?::|%3A)(\d+)/i)
+    if (urn) return `urn:li:${urn[1]}:${urn[2]}`
+    const id = key.match(/\b(share|ugcPost|groupPost|activity)Id=(\d+)/)
+    if (id) return `urn:li:${id[1]}:${id[2]}`
+  }
+  return null
+}
+
+const RICH_CONTAINER_SELECTOR = [
+  '[data-urn]',
+  '[data-id]',
+  '[data-activity-urn]',
+  '[data-view-name*="feed"]',
+  '[data-view-name*="post"]',
+  '[data-finite-scroll-hotkey-item]',
+  'article',
+  '.feed-shared-update-v2',
+  '.occludable-update',
+  '[class*="feed-shared-update"]',
+  '[class*="update-components"]',
+].join(', ')
+
+// 2026 feed rewrite: hashed class names, no data-urn on the item — the feed
+// entry is a bare listitem. Checked as a separate second pass (not appended to
+// the list above) because `closest()` has no per-selector priority: a nearer
+// listitem would otherwise shadow a richer urn-carrying ancestor.
+const LISTITEM_CONTAINER_SELECTOR = 'div[role="listitem"], li[role="listitem"]'
+
 /** Find the post/comment container around an element and derive a stable id. */
 export function closestPostContainer(el: Element): PostContainer | null {
-  const container = el.closest(
-    [
-      '[data-urn]',
-      '[data-id]',
-      '[data-activity-urn]',
-      '[data-view-name*="feed"]',
-      '[data-view-name*="post"]',
-      '[data-finite-scroll-hotkey-item]',
-      'article',
-      '.feed-shared-update-v2',
-      '.occludable-update',
-      '[class*="feed-shared-update"]',
-      '[class*="update-components"]',
-    ].join(', '),
-  )
+  const container = el.closest(RICH_CONTAINER_SELECTOR) ?? el.closest(LISTITEM_CONTAINER_SELECTOR)
   if (!container) return null
-  const urn =
-    container.getAttribute('data-urn') ??
-    container.getAttribute('data-id') ??
-    container.getAttribute('data-activity-urn')
+  const urn = urnOf(container) ?? descendantPostId(container)
   const isComment = !!el.closest('[class*="comments-comment"], [class*="comment-item"]')
   return { el: container, id: urn ?? elementStableId(container), isComment }
 }
@@ -173,6 +218,16 @@ export function isReactionTrigger(btn: HTMLElement): boolean {
   return cls.includes('react') || control.includes('react') || control.includes('like')
 }
 
+/** True if the reaction word came from the accessible text (not class names). */
+export function matchesReactionWord(text: string): boolean {
+  return containsAny(text, REACTION_WORDS)
+}
+
+/** True for controls that open a menu/flyout rather than acting directly. */
+export function opensMenu(btn: HTMLElement): boolean {
+  return btn.hasAttribute('aria-haspopup') || btn.hasAttribute('aria-expanded')
+}
+
 /**
  * The primary reaction toggle inside a post container — the button whose
  * aria-pressed reflects whether the user has reacted. Reading state from this
@@ -180,13 +235,25 @@ export function isReactionTrigger(btn: HTMLElement): boolean {
  */
 export function findReactionTrigger(container: Element): HTMLElement | null {
   const candidates = container.querySelectorAll<HTMLElement>('button, [role="button"]')
-  let fallback: HTMLElement | null = null
+  // 2026 markup carries no aria-pressed anywhere; the primary toggle is instead
+  // the button whose accessible name spells out the state ("Reaction button
+  // state: no reaction" / "Unreact Like"). Social-proof counters ("411
+  // reactions") and the flyout opener ("Open reactions menu") also contain
+  // reaction words, so plain word-matching alone picks the wrong button.
+  let stateBearing: HTMLElement | null = null
+  let plain: HTMLElement | null = null
+  let any: HTMLElement | null = null
   for (const c of candidates) {
     if (!isReactionTrigger(c)) continue
     if (c.hasAttribute('aria-pressed')) return c
-    if (!fallback) fallback = c
+    const text = controlText(c)
+    if (!stateBearing && (text.includes('reaction button state') || containsAny(text, REACTION_UNDO_WORDS))) {
+      stateBearing = c
+    }
+    if (!plain && !opensMenu(c) && !/^\d/.test(text.trim())) plain = c
+    if (!any) any = c
   }
-  return fallback
+  return stateBearing ?? plain ?? any
 }
 
 export function classifyReaction(
@@ -200,12 +267,42 @@ export function classifyReaction(
   return 'unknown'
 }
 
+// A reacted trigger's accessible name flips to an "undo" phrasing
+// ("Unlike", "Unreact", "Remove reaction", «Отменить реакцию», "Cofnij").
+const REACTION_UNDO_WORDS = [
+  'unlike',
+  'unreact',
+  'remove',
+  'undo',
+  // ru
+  'отмен',
+  'убрать',
+  'удалить',
+  // pl
+  'cofnij',
+  'usuń',
+] as const
+
 /** Whether a reaction trigger is currently in the "reacted" (pressed) state. */
 export function isReactionActive(btn: HTMLElement): boolean {
-  const pressed = btn.getAttribute('aria-pressed')
+  const pressed = btn.getAttribute('aria-pressed') ?? btn.getAttribute('aria-checked')
   if (pressed === 'true') return true
   if (pressed === 'false') return false
-  return norm(btn.className).includes('active')
+  // 2026 markup: the button itself has no aria-pressed; sometimes an inner
+  // element carries it instead.
+  const inner = btn.querySelector('[aria-pressed], [aria-checked]')
+  if (inner) {
+    return (
+      inner.getAttribute('aria-pressed') === 'true' || inner.getAttribute('aria-checked') === 'true'
+    )
+  }
+  const text = controlText(btn)
+  // 2026 markup: the toggle's accessible name spells out the state —
+  // "Reaction button state: no reaction" (idle) vs "Unreact Like" (reacted).
+  if (text.includes('reaction button state')) return !text.includes('no reaction')
+  if (containsAny(text, REACTION_UNDO_WORDS)) return true
+  const cls = norm(btn.className)
+  return cls.includes('active') || cls.includes('reacted') || cls.includes('selected')
 }
 
 // ---------------------------------------------------------------------------
@@ -255,8 +352,31 @@ export function isCommentSubmitButton(btn: HTMLElement): boolean {
   const form = btn.closest(
     'form, [class*="comments-comment-box"], [class*="comment-box"], [class*="comments-comment-texteditor"], [data-test-id*="comment"]',
   )
-  if (!form) return false
-  return containsAny(controlText(btn), COMMENT_SUBMIT_WORDS)
+  if (form) return containsAny(controlText(btn), COMMENT_SUBMIT_WORDS)
+  // 2026 markup: the comment box is bare divs — no <form>, no stable classes.
+  // The submit button only exists while the editor holds text, so: a
+  // submit-worded button sharing a small ancestor scope with a non-empty
+  // editor. Repost is excluded ("Repost" matches the 'post' submit word but
+  // sits in the same post scope as an open editor). Misfires are further
+  // gated by the detector's DOM confirmation (comment count must grow).
+  const text = controlText(btn)
+  if (!containsAny(text, COMMENT_SUBMIT_WORDS) || containsAny(text, REPOST_WORDS)) return false
+  const scope = nearestEditorScope(btn)
+  return !!scope && editorTextLength(scope) > 0
+}
+
+/**
+ * Nearest ancestor of `el` that contains a comment/message editor. The scope
+ * is kept shallow so an editor elsewhere in the same post (e.g. the main
+ * comment box while clicking inside an existing comment) is not picked up.
+ */
+export function nearestEditorScope(el: Element, maxDepth = 8): Element | null {
+  let scope: Element | null = el.parentElement
+  for (let depth = 0; scope && depth < maxDepth; depth++) {
+    if (scope.querySelector('[contenteditable="true"], textarea')) return scope
+    scope = scope.parentElement
+  }
+  return null
 }
 
 export function isLikelyCommentInteraction(btn: HTMLElement): boolean {
@@ -271,7 +391,9 @@ export function isLikelyCommentInteraction(btn: HTMLElement): boolean {
 
 /** Is the comment box a reply (nested under an existing comment)? */
 export function isReplyContext(btn: HTMLElement): boolean {
-  return !!btn.closest('[class*="comments-comment-item"] [class*="comment-box"], [class*="reply"]')
+  if (btn.closest('[class*="comments-comment-item"] [class*="comment-box"], [class*="reply"]')) return true
+  // 2026 markup: a reply editor lives inside an existing comment node.
+  return !!btn.closest('[componentkey^="replaceableComment"]')
 }
 
 // ---------------------------------------------------------------------------
@@ -321,8 +443,10 @@ export function isPostShareButton(btn: HTMLElement): boolean {
 // Confirmation helpers (DOM state before/after a user action)
 // ---------------------------------------------------------------------------
 
+// 2026 markup: rendered comments carry
+// componentkey="replaceableComment_urn:li:comment:(urn:li:activity:…,…)".
 export const COMMENT_ITEM_SELECTOR =
-  '[class*="comments-comment-item"], article[class*="comment"]'
+  '[class*="comments-comment-item"], article[class*="comment"], [componentkey^="replaceableComment"]'
 export const MESSAGE_ITEM_SELECTOR =
   '[class*="msg-s-event-listitem"], [class*="message-list-item"]'
 

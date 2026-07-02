@@ -10,6 +10,8 @@ import {
   findReactionTrigger,
   isReactionActive,
   isReactionTrigger,
+  matchesReactionWord,
+  opensMenu,
 } from '../selectors'
 import { debug, emitEvent, emitReactionRemoved, emitSelectorHealth, trace } from '../messaging'
 import { getContext } from '../page-context'
@@ -63,15 +65,16 @@ export class ReactionDetector implements LinkedInDetector {
         ? 'comment'
         : 'post'
       : 'unknown'
+    const menuTrigger = opensMenu(clicked)
 
     trace(
       'reaction',
       'reaction_candidate',
-      `prev=${prevActive};targetType=${targetType};target=${container ? 'container' : 'unknown'}`,
+      `prev=${prevActive};targetType=${targetType};target=${container ? 'container' : 'unknown'};label=${classifyReaction(labelText)};word=${matchesReactionWord(labelText)};menu=${menuTrigger}`,
     )
     if (!container) this.traceDomSnapshot(key, clicked)
     this.pending.add(key)
-    this.confirm(container?.el, clicked, key, prevActive, labelText, targetType, 0)
+    this.confirm(container?.el, clicked, key, prevActive, labelText, targetType, menuTrigger, 0)
   }
 
   private confirm(
@@ -81,6 +84,7 @@ export class ReactionDetector implements LinkedInDetector {
     prevActive: boolean,
     labelText: string,
     targetType: ReactionTargetType,
+    menuTrigger: boolean,
     attempt: number,
   ): void {
     setTimeout(() => {
@@ -89,18 +93,20 @@ export class ReactionDetector implements LinkedInDetector {
       const decision = decideReaction(prevActive, currentActive)
       debug('reaction confirm', attempt + 1, prevActive, currentActive, decision)
       if (decision === 'none' && attempt < CONFIRM_DELAYS_MS.length - 1) {
-        this.confirm(container, fallbackTrigger, key, prevActive, labelText, targetType, attempt + 1)
+        this.confirm(container, fallbackTrigger, key, prevActive, labelText, targetType, menuTrigger, attempt + 1)
         return
       }
       this.pending.delete(key)
       if (decision === 'add') {
         trace('reaction', 'confirmed_add', `targetType=${targetType}`)
-        this.recordAdd(key, labelText, targetType)
+        // The pre-click label often carries no type ("Reaction button state:
+        // no reaction"); the confirmed trigger's label does ("Unreact Like").
+        this.recordAdd(key, `${controlText(trigger)} ${labelText}`, targetType)
       } else if (decision === 'remove') {
         trace('reaction', 'confirmed_remove', `targetType=${targetType}`)
         this.recordRemove(key)
       } else {
-        const fallback = this.fallbackDecision(key, prevActive, labelText)
+        const fallback = this.fallbackDecision(key, prevActive, labelText, menuTrigger)
         if (fallback === 'add') {
           this.fallbackReacted.add(key)
           trace('reaction', 'fallback_add', `targetType=${targetType}`)
@@ -124,13 +130,18 @@ export class ReactionDetector implements LinkedInDetector {
     trace('reaction', 'dom_snapshot', describeAncestryForDiagnostics(el))
   }
 
+  // When the DOM never confirms (2026 hashed markup exposes no pressed state
+  // at all on some surfaces), fall back to counting the click itself — but
+  // only for a control whose accessible text names a reaction and that acts
+  // directly (menu/flyout openers don't react by themselves).
   private fallbackDecision(
     key: string,
     prevActive: boolean,
     labelText: string,
+    menuTrigger: boolean,
   ): 'add' | 'remove' | 'none' {
-    if (prevActive) return 'none'
-    if (classifyReaction(labelText) === 'unknown') return 'none'
+    if (prevActive || menuTrigger) return 'none'
+    if (!matchesReactionWord(labelText)) return 'none'
     return this.fallbackReacted.has(key) ? 'remove' : 'add'
   }
 
