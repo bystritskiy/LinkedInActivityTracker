@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { dayKeyFromDate } from '../common/date'
 import { eventLabelKey, translator } from '../common/i18n'
 import type { MessageKey } from '../common/i18n'
-import type { SettingsPatch } from '../common/messages'
+import type { ExportResult, SettingsPatch } from '../common/messages'
 import { goalRows, summarizeStats } from '../common/summary'
 import type {
   DailyGoals,
@@ -11,7 +11,13 @@ import type {
   TrackedEvent,
   TrackedEventType,
 } from '../common/types'
-import { exportAndDownload, loadState, sendMessage, subscribeState } from '../ui/chrome'
+import {
+  downloadText,
+  exportAndDownload,
+  loadState,
+  sendMessage,
+  subscribeState,
+} from '../ui/chrome'
 
 type Tab = 'today' | 'history' | 'ssi' | 'goals' | 'privacy' | 'diagnostics'
 
@@ -144,7 +150,7 @@ export function Dashboard() {
       {tab === 'ssi' && <SsiTab state={state} dayKey={todayKey} onRun={run} />}
       {tab === 'goals' && <GoalsTab state={state} onRun={run} />}
       {tab === 'privacy' && <PrivacyTab state={state} onRun={run} />}
-      {tab === 'diagnostics' && <DiagnosticsTab state={state} />}
+      {tab === 'diagnostics' && <DiagnosticsTab state={state} onRun={run} />}
     </main>
   )
 }
@@ -609,11 +615,47 @@ function PrivacyTab(props: {
   )
 }
 
-function DiagnosticsTab({ state }: { state: StorageRoot }) {
+function DiagnosticsTab(props: {
+  state: StorageRoot
+  onRun: (action: () => Promise<void>, success?: string) => Promise<void>
+}) {
+  const { state } = props
   const t = translator(state.settings.locale)
+
+  async function exportDiagnostics(): Promise<void> {
+    const result = await sendMessage<ExportResult>({ kind: 'exportDiagnostics' })
+    if (!result.ok || !result.filename || !result.mime || result.content === undefined) {
+      throw new Error(result.error ?? 'export_failed')
+    }
+    downloadText(result.filename, result.mime, result.content)
+  }
+
   return (
     <section>
       <h2>{t('dash.diag.heading')}</h2>
+      <div className="toolbar">
+        <label className="inline-toggle">
+          <input
+            type="checkbox"
+            checked={state.settings.debug}
+            onChange={(e) =>
+              void props.onRun(() =>
+                sendMessage({ kind: 'updateSettings', patch: { debug: e.target.checked } }),
+              )
+            }
+          />
+          Verbose console logging
+        </label>
+        <button type="button" onClick={() => void props.onRun(exportDiagnostics)}>
+          {t('dash.diag.export')}
+        </button>
+        <button
+          type="button"
+          onClick={() => void props.onRun(() => sendMessage({ kind: 'clearDiagnostics' }))}
+        >
+          {t('dash.diag.clear')}
+        </button>
+      </div>
       <dl className="diagnostic-grid">
         <div>
           <dt>{t('dash.diag.version')}</dt>
@@ -645,6 +687,7 @@ function DiagnosticsTab({ state }: { state: StorageRoot }) {
                 <td>{new Date(entry.timestamp).toLocaleString()}</td>
                 <td>{entry.level}</td>
                 <td>{entry.source}</td>
+                <td>{entry.code}</td>
                 <td>{entry.message}</td>
               </tr>
             ))}

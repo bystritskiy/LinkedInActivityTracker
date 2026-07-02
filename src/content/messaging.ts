@@ -51,6 +51,11 @@ export function emitDiagnostic(
   send({ kind: 'diagnostic', level, source, code, message })
 }
 
+export function trace(source: string, code: string, message: string): void {
+  emitDiagnostic('info', source, code, message)
+  debug(source, code, message)
+}
+
 export function emitSelectorHealth(
   detector: DetectorKey,
   status: DetectorStatus,

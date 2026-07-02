@@ -5,11 +5,13 @@ import {
   closestButton,
   closestPostContainer,
   controlText,
+  describeAncestryForDiagnostics,
+  elementStableId,
   findReactionTrigger,
   isReactionActive,
   isReactionTrigger,
 } from '../selectors'
-import { debug, emitEvent, emitReactionRemoved, emitSelectorHealth } from '../messaging'
+import { debug, emitEvent, emitReactionRemoved, emitSelectorHealth, trace } from '../messaging'
 import { getContext } from '../page-context'
 import { getSettings } from '../settings'
 import { reactionKey } from '../../common/dedup'
@@ -34,6 +36,8 @@ const CONFIRM_DELAYS_MS = [180, 420, 900]
 export class ReactionDetector implements LinkedInDetector {
   readonly key = 'reaction' as const
   private readonly pending = new Set<string>()
+  private readonly fallbackReacted = new Set<string>()
+  private readonly snapshotsLogged = new Set<string>()
 
   private readonly onClick = (e: MouseEvent): void => {
     if (getSettings().paused) return
@@ -41,9 +45,12 @@ export class ReactionDetector implements LinkedInDetector {
     if (!clicked || !isReactionTrigger(clicked)) return
 
     const container = closestPostContainer(clicked)
-    const targetId = container?.id ?? 'unknown'
+    const targetId = container?.id ?? elementStableId(clicked)
     const key = reactionKey(targetId)
-    if (this.pending.has(key)) return
+    if (this.pending.has(key)) {
+      trace('reaction', 'pending_duplicate', `target=${container ? 'container' : 'unknown'}`)
+      return
+    }
 
     // Read pressed state from the post's primary toggle, not the (possibly
     // stateless) flyout option the user clicked.
@@ -57,12 +64,19 @@ export class ReactionDetector implements LinkedInDetector {
         : 'post'
       : 'unknown'
 
+    trace(
+      'reaction',
+      'reaction_candidate',
+      `prev=${prevActive};targetType=${targetType};target=${container ? 'container' : 'unknown'}`,
+    )
+    if (!container) this.traceDomSnapshot(key, clicked)
     this.pending.add(key)
-    this.confirm(trigger, key, prevActive, labelText, targetType, 0)
+    this.confirm(container?.el, clicked, key, prevActive, labelText, targetType, 0)
   }
 
   private confirm(
-    trigger: HTMLElement,
+    container: Element | undefined,
+    fallbackTrigger: HTMLElement,
     key: string,
     prevActive: boolean,
     labelText: string,
@@ -70,15 +84,54 @@ export class ReactionDetector implements LinkedInDetector {
     attempt: number,
   ): void {
     setTimeout(() => {
-      const decision = decideReaction(prevActive, isReactionActive(trigger))
+      const trigger = (container && findReactionTrigger(container)) || fallbackTrigger
+      const currentActive = isReactionActive(trigger)
+      const decision = decideReaction(prevActive, currentActive)
+      debug('reaction confirm', attempt + 1, prevActive, currentActive, decision)
       if (decision === 'none' && attempt < CONFIRM_DELAYS_MS.length - 1) {
-        this.confirm(trigger, key, prevActive, labelText, targetType, attempt + 1)
+        this.confirm(container, fallbackTrigger, key, prevActive, labelText, targetType, attempt + 1)
         return
       }
       this.pending.delete(key)
-      if (decision === 'add') this.recordAdd(key, labelText, targetType)
-      else if (decision === 'remove') this.recordRemove(key)
+      if (decision === 'add') {
+        trace('reaction', 'confirmed_add', `targetType=${targetType}`)
+        this.recordAdd(key, labelText, targetType)
+      } else if (decision === 'remove') {
+        trace('reaction', 'confirmed_remove', `targetType=${targetType}`)
+        this.recordRemove(key)
+      } else {
+        const fallback = this.fallbackDecision(key, prevActive, labelText)
+        if (fallback === 'add') {
+          this.fallbackReacted.add(key)
+          trace('reaction', 'fallback_add', `targetType=${targetType}`)
+          this.recordAdd(key, labelText, targetType)
+        } else if (fallback === 'remove') {
+          this.fallbackReacted.delete(key)
+          trace('reaction', 'fallback_remove', `targetType=${targetType}`)
+          this.recordRemove(key)
+        } else {
+          trace('reaction', 'confirm_timeout', `prev=${prevActive};targetType=${targetType}`)
+          this.traceDomSnapshot(key, fallbackTrigger)
+          emitSelectorHealth('reaction', 'needs_verification', 'Reaction click seen, but pressed state did not change.')
+        }
+      }
     }, CONFIRM_DELAYS_MS[attempt])
+  }
+
+  private traceDomSnapshot(key: string, el: Element): void {
+    if (this.snapshotsLogged.has(key)) return
+    this.snapshotsLogged.add(key)
+    trace('reaction', 'dom_snapshot', describeAncestryForDiagnostics(el))
+  }
+
+  private fallbackDecision(
+    key: string,
+    prevActive: boolean,
+    labelText: string,
+  ): 'add' | 'remove' | 'none' {
+    if (prevActive) return 'none'
+    if (classifyReaction(labelText) === 'unknown') return 'none'
+    return this.fallbackReacted.has(key) ? 'remove' : 'add'
   }
 
   private recordAdd(key: string, labelText: string, targetType: ReactionTargetType): void {
@@ -118,9 +171,13 @@ export class ReactionDetector implements LinkedInDetector {
   detach(): void {
     document.removeEventListener('click', this.onClick, true)
     this.pending.clear()
+    this.fallbackReacted.clear()
+    this.snapshotsLogged.clear()
   }
 
   onNavigate(): void {
     this.pending.clear()
+    this.fallbackReacted.clear()
+    this.snapshotsLogged.clear()
   }
 }

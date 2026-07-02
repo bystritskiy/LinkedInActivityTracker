@@ -3,6 +3,8 @@
 // originals and never alter navigation behavior), plus listen for popstate.
 // This performs no LinkedIn actions and changes nothing the user sees.
 
+import { trace } from './messaging'
+
 export function watchNavigation(onChange: () => void): () => void {
   let lastUrl = location.href
   const fire = () => {
@@ -10,6 +12,7 @@ export function watchNavigation(onChange: () => void): () => void {
     setTimeout(() => {
       if (location.href === lastUrl) return
       lastUrl = location.href
+      trace('navigation', 'url_changed', location.pathname)
       try {
         onChange()
       } catch {

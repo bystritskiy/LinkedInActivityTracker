@@ -162,6 +162,17 @@ section h3 {
   font-weight: 650;
 }
 
+.toolbar .inline-toggle {
+  display: flex;
+  align-items: center;
+  min-width: auto;
+  gap: 8px;
+}
+
+.inline-toggle input {
+  width: auto;
+}
+
 .form-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   margin-bottom: 16px;

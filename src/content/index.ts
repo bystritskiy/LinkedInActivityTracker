@@ -16,9 +16,11 @@ import { CommentDetector } from './detectors/comment'
 import { RepostDetector } from './detectors/repost'
 import { MessageDetector } from './detectors/message'
 import { PostDetector } from './detectors/post'
+import { trace } from './messaging'
 
 async function boot(): Promise<void> {
   await initSettings()
+  trace('content', 'boot', `page=${refreshContext().pageType}`)
 
   const manager = new DetectorManager(refreshContext, watchNavigation)
   manager

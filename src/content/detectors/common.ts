@@ -18,6 +18,7 @@ export function pollConfirm(
   check: () => boolean,
   onConfirmed: () => void,
   delays: number[] = [200, 500, 1000, 1600],
+  onTimeout?: () => void,
 ): void {
   const attempt = (idx: number): void => {
     setTimeout(() => {
@@ -26,6 +27,7 @@ export function pollConfirm(
         return
       }
       if (idx + 1 < delays.length) attempt(idx + 1)
+      else onTimeout?.()
     }, delays[idx])
   }
   attempt(0)

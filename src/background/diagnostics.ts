@@ -15,7 +15,18 @@ export function pushDiagnostic(
   code: string,
   message: string,
 ): void {
-  root.diagnostics.unshift({ id: newId(), timestamp: nowIso(), level, source, code, message })
+  const now = nowIso()
+  const previous = root.diagnostics[0]
+  if (
+    previous?.level === level &&
+    previous.source === source &&
+    previous.code === code &&
+    previous.message === message
+  ) {
+    previous.timestamp = now
+    return
+  }
+  root.diagnostics.unshift({ id: newId(), timestamp: now, level, source, code, message })
   if (root.diagnostics.length > MAX_DIAGNOSTICS) {
     root.diagnostics.length = MAX_DIAGNOSTICS
   }

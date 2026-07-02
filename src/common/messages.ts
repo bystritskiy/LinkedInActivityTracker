@@ -76,6 +76,8 @@ export type UiMessage =
   | { kind: 'setActiveSeconds'; dayKey: string; seconds: number }
   | { kind: 'addSSI'; dayKey: string; ssi: SSIEntry }
   | { kind: 'export'; format: ExportFormat; dayKey?: string }
+  | { kind: 'exportDiagnostics' }
+  | { kind: 'clearDiagnostics' }
   | { kind: 'importJson'; payload: string }
   | { kind: 'clearAllData' }
 
@@ -113,6 +115,8 @@ export interface ResponseMap {
   setActiveSeconds: Ack
   addSSI: Ack
   export: ExportResult
+  exportDiagnostics: ExportResult
+  clearDiagnostics: Ack
   importJson: ImportResult
   clearAllData: Ack
 }

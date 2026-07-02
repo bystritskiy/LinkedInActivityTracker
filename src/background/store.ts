@@ -40,7 +40,7 @@ import {
   todayKey,
 } from './reducer'
 import { accept } from './dedup-cache'
-import { pushDiagnostic, setSelectorHealth } from './diagnostics'
+import { buildDiagnosticsExport, pushDiagnostic, setSelectorHealth } from './diagnostics'
 import { buildExport } from './export'
 import { importBackup } from './import'
 
@@ -124,10 +124,14 @@ async function handleContent(msg: ContentMessage): Promise<void> {
       }
       await withRoot((root) => {
         if (root.settings.paused) return
-        if (!trackingEnabled(root.settings, event.type)) return
+        if (!trackingEnabled(root.settings, event.type)) {
+          pushDiagnostic(root, 'info', 'background', 'event_skipped_tracking_disabled', event.type)
+          return
+        }
         const gated: TrackedEvent = { ...event, source: 'automatic', metadata: gateMetadata(event, root.settings) }
         recordEvent(root, gated)
         setSelectorHealth(root, detectorKeyForType(event.type), 'working')
+        pushDiagnostic(root, 'info', detectorKeyForType(event.type), 'event_recorded', event.type)
       })
       return
     }
@@ -235,6 +239,19 @@ async function handleUi(
       })
     case 'export':
       return readRoot().then((root): ExportResult => ({ ok: true, ...buildExport(root, msg.format, msg.dayKey) }))
+    case 'exportDiagnostics':
+      return readRoot().then((root): ExportResult => ({
+        ok: true,
+        format: 'json',
+        filename: `linkedin-activity-diagnostics-${todayKey()}.json`,
+        mime: 'application/json',
+        content: buildDiagnosticsExport(root),
+      }))
+    case 'clearDiagnostics':
+      return withRoot((root) => {
+        root.diagnostics = []
+        return ACK_OK
+      })
     case 'importJson':
       return withRoot((root) => importBackup(root, msg.payload))
     case 'clearAllData':
@@ -264,6 +281,8 @@ const UI_KINDS = new Set<UiMessage['kind']>([
   'setActiveSeconds',
   'addSSI',
   'export',
+  'exportDiagnostics',
+  'clearDiagnostics',
   'importJson',
   'clearAllData',
 ])

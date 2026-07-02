@@ -28,6 +28,49 @@ export function controlText(el: Element): string {
   return norm(el.textContent).trim().slice(0, 120)
 }
 
+function compactClassList(el: Element): string[] {
+  const className = typeof el.className === 'string' ? el.className : ''
+  return className
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((c) => c.length <= 80)
+    .slice(0, 8)
+}
+
+function dataAttributeNames(el: Element): string[] {
+  return Array.from(el.attributes)
+    .map((a) => a.name)
+    .filter((name) => name.startsWith('data-'))
+    .sort()
+    .slice(0, 12)
+}
+
+/**
+ * Privacy-safe structural snapshot for debugging selectors on the user's real
+ * LinkedIn DOM. Deliberately excludes textContent, href, names, and attribute
+ * values that may contain profile or post data.
+ */
+export function describeAncestryForDiagnostics(el: Element, maxDepth = 8): string {
+  const parts: string[] = []
+  let current: Element | null = el
+  while (current && parts.length < maxDepth) {
+    const attrs: string[] = []
+    const role = current.getAttribute('role')
+    const ariaPressed = current.getAttribute('aria-pressed')
+    const ariaExpanded = current.getAttribute('aria-expanded')
+    if (role) attrs.push(`role=${role}`)
+    if (ariaPressed) attrs.push(`pressed=${ariaPressed}`)
+    if (ariaExpanded) attrs.push(`expanded=${ariaExpanded}`)
+    const dataNames = dataAttributeNames(current)
+    if (dataNames.length > 0) attrs.push(`data=${dataNames.join('|')}`)
+    const classes = compactClassList(current)
+    if (classes.length > 0) attrs.push(`class=${classes.join('|')}`)
+    parts.push(`${current.tagName.toLowerCase()}[${attrs.join(';')}]`)
+    current = current.parentElement
+  }
+  return parts.join(' <= ').slice(0, 1800)
+}
+
 /** Nearest clickable ancestor (or self). */
 export function closestButton(target: EventTarget | null): HTMLElement | null {
   if (!(target instanceof Element)) return null
@@ -42,7 +85,7 @@ export function withinDialog(el: Element): boolean {
 // Stable per-element id for elements without a LinkedIn URN (used only for
 // short-lived dedup within a session).
 const elementIds = new WeakMap<Element, string>()
-function fallbackElementId(el: Element): string {
+export function elementStableId(el: Element): string {
   let id = elementIds.get(el)
   if (!id) {
     id = `el-${crypto.randomUUID()}`
@@ -60,12 +103,27 @@ export interface PostContainer {
 /** Find the post/comment container around an element and derive a stable id. */
 export function closestPostContainer(el: Element): PostContainer | null {
   const container = el.closest(
-    '[data-urn], [data-id], article, .feed-shared-update-v2, .occludable-update',
+    [
+      '[data-urn]',
+      '[data-id]',
+      '[data-activity-urn]',
+      '[data-view-name*="feed"]',
+      '[data-view-name*="post"]',
+      '[data-finite-scroll-hotkey-item]',
+      'article',
+      '.feed-shared-update-v2',
+      '.occludable-update',
+      '[class*="feed-shared-update"]',
+      '[class*="update-components"]',
+    ].join(', '),
   )
   if (!container) return null
-  const urn = container.getAttribute('data-urn') ?? container.getAttribute('data-id')
+  const urn =
+    container.getAttribute('data-urn') ??
+    container.getAttribute('data-id') ??
+    container.getAttribute('data-activity-urn')
   const isComment = !!el.closest('[class*="comments-comment"], [class*="comment-item"]')
-  return { el: container, id: urn ?? fallbackElementId(container), isComment }
+  return { el: container, id: urn ?? elementStableId(container), isComment }
 }
 
 // ---------------------------------------------------------------------------
@@ -194,9 +252,21 @@ const COMMENT_SUBMIT_WORDS = [
 export function isCommentSubmitButton(btn: HTMLElement): boolean {
   const control = norm(btn.getAttribute('data-control-name'))
   if (control.includes('comment') && containsAny(control, ['post', 'submit', 'reply'])) return true
-  const form = btn.closest('form, [class*="comments-comment-box"], [class*="comment-box"]')
+  const form = btn.closest(
+    'form, [class*="comments-comment-box"], [class*="comment-box"], [class*="comments-comment-texteditor"], [data-test-id*="comment"]',
+  )
   if (!form) return false
   return containsAny(controlText(btn), COMMENT_SUBMIT_WORDS)
+}
+
+export function isLikelyCommentInteraction(btn: HTMLElement): boolean {
+  const text = controlText(btn)
+  const control = norm(btn.getAttribute('data-control-name'))
+  if (containsAny(text, COMMENT_SUBMIT_WORDS)) return true
+  if (control.includes('comment') || control.includes('reply')) return true
+  return !!btn.closest(
+    'form, [class*="comments-comment-box"], [class*="comment-box"], [class*="comments-comment-texteditor"], [contenteditable="true"]',
+  )
 }
 
 /** Is the comment box a reply (nested under an existing comment)? */
