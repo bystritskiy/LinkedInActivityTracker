@@ -80,6 +80,7 @@ export const en = {
     'No SSI entries yet. Open linkedin.com/sales/ssi so the extension can record it.',
   'dash.ssi.disclaimer':
     'Activity and SSI are shown side by side. This is a visual comparison only and does not imply cause and effect.',
+  'dash.analytics.hideDuplicateRecords': 'Hide duplicate records',
 
   'dash.views.heading': 'Profile viewers',
   'dash.views.viewers': 'Viewers',
@@ -109,6 +110,10 @@ export const en = {
   'dash.privacy.heading': 'Privacy',
   'dash.privacy.notice':
     'This extension never performs actions on LinkedIn. It only records actions that you manually complete in your browser. All activity data is stored locally on your device.',
+  'dash.privacy.heroTitle': 'Local-first. Your data is yours.',
+  'dash.privacy.heroBody':
+    'LinkedIn Activity Tracker runs in your browser, stores data in local Chrome storage, and does not send your activity to any server. The extension is open source, so the code can be inspected.',
+  'dash.privacy.sourceCode': 'View source code',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
     'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, aggregate profile-viewer counts, and aggregate dashboard metrics (read from the SSI / analytics / dashboard pages when you open them, or entered by hand where supported).',
@@ -117,7 +122,10 @@ export const en = {
     'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
   'dash.privacy.whereStored': 'Where it is stored',
   'dash.privacy.whereStoredBody':
-    'Locally in your browser (chrome.storage.local). Nothing is ever sent to a server.',
+    'Only locally in your browser (chrome.storage.local). There is no backend account, sync service, or analytics upload for your activity data.',
+  'dash.privacy.openSource': 'Open source',
+  'dash.privacy.openSourceBody':
+    'The extension source code is public and can be reviewed on',
   'dash.privacy.tracking': 'Tracking toggles',
   'dash.privacy.exportData': 'Export all data (JSON)',
   'dash.privacy.importData': 'Import data (JSON)',

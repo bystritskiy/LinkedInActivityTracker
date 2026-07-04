@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { dayKeyFromDate } from '../common/date'
+import { dayKeyFromDate, formatLocalDateTime24, formatLocalTime24 } from '../common/date'
 import { eventLabelKey, translator } from '../common/i18n'
 import type { MessageKey } from '../common/i18n'
 import type { ExportResult, SettingsPatch } from '../common/messages'
@@ -8,7 +8,9 @@ import type {
   DailyGoals,
   LinkedInDashboardEntry,
   LocaleCode,
+  ProfileViewsEntry,
   Settings,
+  SSIEntry,
   StorageRoot,
   TrackedEvent,
   TrackedEventType,
@@ -111,14 +113,33 @@ export function Dashboard() {
           <h1>{t('dash.title')}</h1>
           <p>{todayKey}</p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            void run(() => sendMessage({ kind: 'setPaused', paused: !state.settings.paused }))
-          }
-        >
-          {state.settings.paused ? t('popup.resume') : t('popup.pause')}
-        </button>
+        <div className="app-actions">
+          <label>
+            {t('settings.language')}
+            <select
+              value={state.settings.locale}
+              onChange={(e) =>
+                void run(() =>
+                  sendMessage({
+                    kind: 'updateSettings',
+                    patch: { locale: e.target.value as LocaleCode },
+                  }),
+                )
+              }
+            >
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() =>
+              void run(() => sendMessage({ kind: 'setPaused', paused: !state.settings.paused }))
+            }
+          >
+            {state.settings.paused ? t('popup.resume') : t('popup.pause')}
+          </button>
+        </div>
       </header>
 
       <nav className="tabs" aria-label="Dashboard sections">
@@ -204,7 +225,7 @@ function TodayTab(props: {
           <tbody>
             {sortedEvents(props.events).map((event) => (
               <tr key={event.id}>
-                <td>{new Date(event.timestamp).toLocaleTimeString()}</td>
+                <td>{formatLocalTime24(event.timestamp)}</td>
                 <td>{eventLabel(props.state.settings, event.type)}</td>
                 <td>{t(event.source === 'manual' ? 'dash.source.manual' : 'dash.source.automatic')}</td>
                 <td>
@@ -287,10 +308,59 @@ function HistoryTab({ state }: { state: StorageRoot }) {
   )
 }
 
+function entryDayKey(timestamp: string | undefined): string {
+  return timestamp ? dayKeyFromDate(new Date(timestamp)) : 'unknown'
+}
+
+function compactEntryList<T extends { timestamp: string }>(
+  entries: T[],
+  fingerprint: (entry: T) => string,
+): T[] {
+  const seen = new Set<string>()
+  return entries.filter((entry) => {
+    const key = `${entryDayKey(entry.timestamp)}|${fingerprint(entry)}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function ssiFingerprint(entry: SSIEntry): string {
+  return [
+    entry.total,
+    entry.professionalBrand,
+    entry.findRightPeople,
+    entry.engageWithInsights,
+    entry.buildRelationships,
+  ].join('|')
+}
+
+function profileViewsFingerprint(entry: ProfileViewsEntry): string {
+  return [entry.viewers, entry.rangeDays].join('|')
+}
+
+function linkedInDashboardFingerprint(entry: LinkedInDashboardEntry): string {
+  return [
+    entry.postImpressions,
+    entry.postImpressionsRangeDays,
+    entry.followers,
+    entry.followersChangePercent,
+    entry.profileViewers,
+    entry.profileViewersRangeDays,
+    entry.searchAppearances,
+    entry.searchAppearancesPeriod,
+    entry.searchAppearancesChangePercent,
+    entry.weeklyPosts,
+    entry.weeklyComments,
+    entry.weeklyPeriod,
+  ].join('|')
+}
+
 function SsiTab(props: {
   state: StorageRoot
 }) {
   const t = translator(props.state.settings.locale)
+  const [hideDuplicateAnalytics, setHideDuplicateAnalytics] = useState(true)
 
   // All observations across all days, newest first. Pre-v2 days may carry only
   // the single stats.ssi snapshot.
@@ -321,6 +391,15 @@ function SsiTab(props: {
   const latestSSI = entries[0]
   const latestViews = viewEntries[0]
   const latestDashboard = dashboardEntries[0]
+  const visibleEntries = hideDuplicateAnalytics
+    ? compactEntryList(entries, ssiFingerprint)
+    : entries
+  const visibleViewEntries = hideDuplicateAnalytics
+    ? compactEntryList(viewEntries, profileViewsFingerprint)
+    : viewEntries
+  const visibleDashboardEntries = hideDuplicateAnalytics
+    ? compactEntryList(dashboardEntries, linkedInDashboardFingerprint)
+    : dashboardEntries
 
   return (
     <section className="analytics-tab">
@@ -331,11 +410,20 @@ function SsiTab(props: {
         </div>
       </div>
 
+      <label className="inline-toggle analytics-option">
+        <input
+          type="checkbox"
+          checked={hideDuplicateAnalytics}
+          onChange={(e) => setHideDuplicateAnalytics(e.target.checked)}
+        />
+        {t('dash.analytics.hideDuplicateRecords')}
+      </label>
+
       <div className="analytics-summary">
         <MetricCard
           label={t('dash.ssi.total')}
           value={latestSSI?.total}
-          meta={latestSSI?.timestamp ? new Date(latestSSI.timestamp).toLocaleString() : undefined}
+          meta={latestSSI?.timestamp ? formatLocalDateTime24(latestSSI.timestamp) : undefined}
         />
         <MetricCard
           label={t('dash.views.viewers')}
@@ -378,7 +466,7 @@ function SsiTab(props: {
         label="linkedin.com/sales/ssi"
         locale={props.state.settings.locale}
       />
-      {entries.length === 0 ? (
+      {visibleEntries.length === 0 ? (
         <p>{t('dash.ssi.noData')}</p>
       ) : (
         <div className="table-scroll">
@@ -395,9 +483,9 @@ function SsiTab(props: {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e, i) => (
+              {visibleEntries.map((e, i) => (
                 <tr key={`${e.timestamp}-${i}`}>
-                  <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                  <td>{e.timestamp ? formatLocalDateTime24(e.timestamp) : '-'}</td>
                   <td>{formatMetricValue(e.total)}</td>
                   <td>{formatMetricValue(e.professionalBrand)}</td>
                   <td>{formatMetricValue(e.findRightPeople)}</td>
@@ -417,7 +505,7 @@ function SsiTab(props: {
         label="linkedin.com/analytics/profile-views"
         locale={props.state.settings.locale}
       />
-      {viewEntries.length === 0 ? (
+      {visibleViewEntries.length === 0 ? (
         <p>{t('dash.views.noData')}</p>
       ) : (
         <div className="table-scroll">
@@ -431,9 +519,9 @@ function SsiTab(props: {
               </tr>
             </thead>
             <tbody>
-              {viewEntries.map((e, i) => (
+              {visibleViewEntries.map((e, i) => (
                 <tr key={`${e.timestamp}-${i}`}>
-                  <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                  <td>{e.timestamp ? formatLocalDateTime24(e.timestamp) : '-'}</td>
                   <td>{formatMetricValue(e.viewers)}</td>
                   <td>{formatMetricValue(e.rangeDays)}</td>
                   <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
@@ -450,7 +538,7 @@ function SsiTab(props: {
         label="linkedin.com/dashboard"
         locale={props.state.settings.locale}
       />
-      {dashboardEntries.length === 0 ? (
+      {visibleDashboardEntries.length === 0 ? (
         <p>{t('dash.linkedinDashboard.noData')}</p>
       ) : (
         <div className="table-scroll">
@@ -474,7 +562,7 @@ function SsiTab(props: {
               </tr>
             </thead>
             <tbody>
-              {dashboardEntries.map((e, i) => (
+              {visibleDashboardEntries.map((e, i) => (
                 <LinkedInDashboardRow
                   key={`${e.timestamp}-${i}`}
                   entry={e}
@@ -538,7 +626,7 @@ function LinkedInDashboardRow({
 }) {
   return (
     <tr>
-      <td>{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-'}</td>
+      <td>{entry.timestamp ? formatLocalDateTime24(entry.timestamp) : '-'}</td>
       <td>{formatMetricValue(entry.postImpressions)}</td>
       <td>{formatMetricValue(entry.postImpressionsRangeDays)}</td>
       <td>{formatMetricValue(entry.followers)}</td>
@@ -628,6 +716,20 @@ function PrivacyTab(props: {
   return (
     <section>
       <h2>{t('dash.privacy.heading')}</h2>
+      <div className="privacy-hero">
+        <div>
+          <h3>{t('dash.privacy.heroTitle')}</h3>
+          <p>{t('dash.privacy.heroBody')}</p>
+        </div>
+        <a
+          className="text-link"
+          href="https://github.com/bystritskiy/LinkedInActivityTracker"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('dash.privacy.sourceCode')}
+        </a>
+      </div>
       <div className="info-grid">
         <article>
           <h3>{t('dash.privacy.whatStored')}</h3>
@@ -640,6 +742,20 @@ function PrivacyTab(props: {
         <article>
           <h3>{t('dash.privacy.whereStored')}</h3>
           <p>{t('dash.privacy.whereStoredBody')}</p>
+        </article>
+        <article>
+          <h3>{t('dash.privacy.openSource')}</h3>
+          <p>
+            {t('dash.privacy.openSourceBody')}{' '}
+            <a
+              className="text-link"
+              href="https://github.com/bystritskiy/LinkedInActivityTracker"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+          </p>
         </article>
       </div>
 
@@ -810,7 +926,7 @@ function DiagnosticsTab(props: {
           <tbody>
             {state.diagnostics.map((entry) => (
               <tr key={entry.id}>
-                <td>{new Date(entry.timestamp).toLocaleString()}</td>
+                <td>{formatLocalDateTime24(entry.timestamp)}</td>
                 <td>{entry.level}</td>
                 <td>{entry.source}</td>
                 <td>{entry.code}</td>

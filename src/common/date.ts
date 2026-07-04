@@ -53,6 +53,18 @@ export function secondsToMinutes(seconds: number): number {
   return Math.floor(seconds / 60)
 }
 
+/** Format a timestamp as local 24-hour time (HH:mm:ss). */
+export function formatLocalTime24(timestamp: string | Date): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`
+}
+
+/** Format a timestamp as local date + 24-hour time (YYYY-MM-DD HH:mm:ss). */
+export function formatLocalDateTime24(timestamp: string | Date): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp
+  return `${dayKeyFromDate(date)} ${formatLocalTime24(date)}`
+}
+
 /** The IANA timezone the browser is currently using, e.g. "Europe/Warsaw". */
 export function localTimeZone(): string {
   try {

@@ -82,6 +82,7 @@ export const ru: Record<MessageKey, string> = {
     'Записей SSI пока нет. Откройте linkedin.com/sales/ssi, чтобы расширение записало данные.',
   'dash.ssi.disclaimer':
     'Активность и SSI показаны рядом. Это только визуальное сопоставление и не означает причинно-следственной связи.',
+  'dash.analytics.hideDuplicateRecords': 'Скрывать одинаковые записи',
 
   'dash.views.heading': 'Просмотры профиля',
   'dash.views.viewers': 'Просмотревшие',
@@ -111,6 +112,10 @@ export const ru: Record<MessageKey, string> = {
   'dash.privacy.heading': 'Приватность',
   'dash.privacy.notice':
     'Расширение никогда не выполняет действия в LinkedIn вместо вас. Оно только фиксирует действия, которые вы вручную совершили в браузере. Все данные об активности хранятся локально на вашем устройстве.',
+  'dash.privacy.heroTitle': 'Локально по умолчанию. Данные принадлежат вам.',
+  'dash.privacy.heroBody':
+    'LinkedIn Activity Tracker работает в вашем браузере, хранит данные в локальном хранилище Chrome и не отправляет вашу активность на серверы. Расширение open source, поэтому код можно проверить.',
+  'dash.privacy.sourceCode': 'Открыть исходный код',
   'dash.privacy.whatStored': 'Что хранится',
   'dash.privacy.whatStoredBody':
     'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI, суммарное число просмотров профиля и агрегированные метрики dashboard (считанные со страниц SSI / аналитики / dashboard при их открытии или введённые вручную там, где это поддержано).',
@@ -119,7 +124,10 @@ export const ru: Record<MessageKey, string> = {
     'Не хранятся тексты сообщений, комментариев и постов. Нет имён, email, фотографий и содержимого профилей. Нет cookies, токенов и сетевых ответов.',
   'dash.privacy.whereStored': 'Где хранится',
   'dash.privacy.whereStoredBody':
-    'Локально в вашем браузере (chrome.storage.local). Ничего не отправляется на сервер.',
+    'Только локально в вашем браузере (chrome.storage.local). Нет backend-аккаунта, синхронизации или отправки аналитики с вашей активностью.',
+  'dash.privacy.openSource': 'Open source',
+  'dash.privacy.openSourceBody':
+    'Исходный код расширения публичный, его можно проверить на',
   'dash.privacy.tracking': 'Переключатели трекинга',
   'dash.privacy.exportData': 'Экспортировать все данные (JSON)',
   'dash.privacy.importData': 'Импортировать данные (JSON)',
