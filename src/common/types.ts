@@ -105,6 +105,7 @@ export type LinkedInPageType =
   | 'notifications'
   | 'post'
   | 'ssi'
+  | 'analytics'
   | 'other'
 
 export interface ActivitySession {
@@ -131,6 +132,20 @@ export interface SSIEntry {
   source?: EventSource
 }
 
+/**
+ * A reading of the "Who's viewed your profile" analytics page. Only the
+ * aggregate count is stored — never who the viewers are.
+ */
+export interface ProfileViewsEntry {
+  timestamp: string
+  /** Total profile viewers LinkedIn reports for the period. */
+  viewers: number
+  /** The period the count covers, in days (e.g. 90), when detected. */
+  rangeDays?: number
+  /** How the entry was captured: read off the analytics page or typed in by hand. */
+  source?: EventSource
+}
+
 export interface DailyGoals {
   activeMinutes: number
   reactions: number
@@ -148,6 +163,7 @@ export interface DailyStats {
   activeSeconds: number
   counters: Counters
   ssi?: SSIEntry
+  profileViews?: ProfileViewsEntry
   /** Snapshot of the goals that were active on this day (for accurate history). */
   goalsSnapshot?: DailyGoals
 }
@@ -160,6 +176,8 @@ export interface DayRecord {
   sessions: ActivitySession[]
   /** Every SSI observation made this day (append-only); stats.ssi is the latest. */
   ssiEntries: SSIEntry[]
+  /** Every profile-views observation made this day; stats.profileViews is the latest. */
+  profileViewsEntries: ProfileViewsEntry[]
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +252,7 @@ export type DetectorKey =
   | 'activeTime'
   | 'navigation'
   | 'ssi'
+  | 'profileViews'
 
 export type DetectorStatus = 'working' | 'needs_verification' | 'unknown'
 

@@ -15,7 +15,7 @@ import { dayKeyFromDate, nowIso } from '../common/date'
 import { eventLabelKey, t } from '../common/i18n'
 import { getSettings } from './settings'
 import { showToast } from './toast'
-import type { SSIScores } from './selectors'
+import type { ProfileViewsSnapshot, SSIScores } from './selectors'
 
 function send(msg: ContentMessage): void {
   try {
@@ -69,6 +69,15 @@ export function emitSSISnapshot(scores: SSIScores): void {
     kind: 'ssiSnapshot',
     dayKey: dayKeyFromDate(new Date()),
     ssi: { timestamp: nowIso(), ...scores },
+  })
+}
+
+/** Viewer count read off the profile-views analytics page, recorded under today's dayKey. */
+export function emitProfileViewsSnapshot(snapshot: ProfileViewsSnapshot): void {
+  send({
+    kind: 'profileViewsSnapshot',
+    dayKey: dayKeyFromDate(new Date()),
+    entry: { timestamp: nowIso(), ...snapshot },
   })
 }
 

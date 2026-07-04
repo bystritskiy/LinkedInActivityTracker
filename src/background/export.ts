@@ -39,6 +39,7 @@ function buildMarkdown(root: StorageRoot, dayKey: string): string {
     `- Reposts: ${s.reposts}`,
     `- Posts: ${s.posts}`,
     `- SSI: ${s.ssi ?? '—'}`,
+    `- Profile viewers: ${s.profileViewers ?? '—'}`,
     '',
     '## Notes',
     '',
@@ -68,6 +69,8 @@ function buildCsv(root: StorageRoot): string {
     'SSIFindRightPeople',
     'SSIEngageWithInsights',
     'SSIBuildRelationships',
+    'ProfileViewers',
+    'ProfileViewersRangeDays',
   ]
   const rows = Object.keys(root.days)
     .sort()
@@ -89,6 +92,8 @@ function buildCsv(root: StorageRoot): string {
         ssi?.findRightPeople,
         ssi?.engageWithInsights,
         ssi?.buildRelationships,
+        s.profileViewers,
+        day.stats.profileViews?.rangeDays,
       ]
         .map(csvField)
         .join(',')

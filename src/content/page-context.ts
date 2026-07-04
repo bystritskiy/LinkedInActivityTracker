@@ -15,6 +15,8 @@ export function detectPageType(pathname: string = location.pathname): LinkedInPa
   if (p.startsWith('/jobs/')) return 'jobs'
   if (p.startsWith('/notifications/')) return 'notifications'
   if (p.startsWith('/sales/ssi') || p.includes('/ssi')) return 'ssi'
+  // /analytics/profile-views/ plus the /me/profile-views alias it redirects from.
+  if (p.startsWith('/analytics') || p.includes('/profile-views')) return 'analytics'
   return 'other'
 }
 

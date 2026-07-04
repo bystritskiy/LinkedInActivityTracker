@@ -58,8 +58,21 @@ export function runMigrations(raw: unknown, fallbackVersion = '0.0.0'): StorageR
     }
   }
 
+  // v2 -> v3: per-day profile-views history (profileViewsEntries), mirroring
+  // the SSI history shape.
+  if (version < 3 && isObject(data.days)) {
+    for (const day of Object.values(data.days)) {
+      if (!isObject(day)) continue
+      if (!Array.isArray(day.profileViewsEntries)) {
+        const stats = isObject(day.stats) ? day.stats : undefined
+        const pv = stats && isObject(stats.profileViews) ? stats.profileViews : undefined
+        day.profileViewsEntries = pv ? [pv] : []
+      }
+    }
+  }
+
   // Future migrations go here:
-  // if ((data.schemaVersion as number) < 3) { ... }
+  // if ((data.schemaVersion as number) < 4) { ... }
 
   data.settings = mergeSettings(DEFAULT_SETTINGS, data.settings)
   data.schemaVersion = SCHEMA_VERSION

@@ -6,6 +6,7 @@ import {
   manualAdjust,
   recordEvent,
   removeReactionByDedupKey,
+  setProfileViews,
   setSSI,
 } from '../src/background/reducer'
 
@@ -95,5 +96,27 @@ describe('reducer', () => {
     expect(day.ssiEntries[0].total).toBe(32)
     expect(day.stats.ssi?.total).toBe(33)
     expect(day.stats.ssi?.buildRelationships).toBe(15)
+  })
+
+  it('keeps a per-day history of profile-views observations with the latest as the summary', () => {
+    const state = root()
+    setProfileViews(state, '2026-06-30', {
+      timestamp: '2026-06-30T09:00:00.000Z',
+      viewers: 51,
+      rangeDays: 90,
+      source: 'automatic',
+    })
+    setProfileViews(state, '2026-06-30', {
+      timestamp: '2026-06-30T18:00:00.000Z',
+      viewers: 54,
+      rangeDays: 90,
+      source: 'automatic',
+    })
+
+    const day = state.days['2026-06-30']
+    expect(day.profileViewsEntries).toHaveLength(2)
+    expect(day.profileViewsEntries[0].viewers).toBe(51)
+    expect(day.stats.profileViews?.viewers).toBe(54)
+    expect(day.stats.profileViews?.rangeDays).toBe(90)
   })
 })

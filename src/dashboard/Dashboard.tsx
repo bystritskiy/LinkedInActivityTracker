@@ -334,6 +334,7 @@ function HistoryTab({ state }: { state: StorageRoot }) {
               <th>{t('events.repost')}</th>
               <th>{t('events.post')}</th>
               <th>SSI</th>
+              <th>{t('dash.history.profileViewers')}</th>
             </tr>
           </thead>
           <tbody>
@@ -350,6 +351,7 @@ function HistoryTab({ state }: { state: StorageRoot }) {
                   <td>{s.reposts}</td>
                   <td>{s.posts}</td>
                   <td>{s.ssi ?? '-'}</td>
+                  <td>{s.profileViewers ?? '-'}</td>
                 </tr>
               )
             })}
@@ -377,6 +379,17 @@ function SsiTab(props: {
   // the single stats.ssi snapshot.
   const entries = Object.values(props.state.days)
     .flatMap((d) => (d.ssiEntries?.length ? d.ssiEntries : d.stats.ssi ? [d.stats.ssi] : []))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+  // Same for profile-views observations (pre-v3 days may lack the array).
+  const viewEntries = Object.values(props.state.days)
+    .flatMap((d) =>
+      d.profileViewsEntries?.length
+        ? d.profileViewsEntries
+        : d.stats.profileViews
+          ? [d.stats.profileViews]
+          : [],
+    )
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 
   return (
@@ -452,6 +465,32 @@ function SsiTab(props: {
                 <td>{e.findRightPeople ?? '-'}</td>
                 <td>{e.engageWithInsights ?? '-'}</td>
                 <td>{e.buildRelationships ?? '-'}</td>
+                <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <h3>{t('dash.views.heading')}</h3>
+      {viewEntries.length === 0 ? (
+        <p>{t('dash.views.noData')}</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>{t('dash.ssi.date')}</th>
+              <th>{t('dash.views.viewers')}</th>
+              <th>{t('dash.views.rangeDays')}</th>
+              <th>{t('dash.ssi.source')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {viewEntries.map((e, i) => (
+              <tr key={`${e.timestamp}-${i}`}>
+                <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                <td>{e.viewers}</td>
+                <td>{e.rangeDays ?? '-'}</td>
                 <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
               </tr>
             ))}

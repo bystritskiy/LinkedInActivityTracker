@@ -9,7 +9,7 @@ import type {
 } from './types'
 
 /** Bump this when the persisted schema changes and add a migration. */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 /** Single chrome.storage.local key holding the entire StorageRoot. */
 export const STORAGE_KEY = 'lat:root'

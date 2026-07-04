@@ -76,7 +76,7 @@ export function describeAncestryForDiagnostics(el: Element, maxDepth = 8): strin
 /** Nearest clickable ancestor (or self). */
 export function closestButton(target: EventTarget | null): HTMLElement | null {
   if (!(target instanceof Element)) return null
-  return target.closest<HTMLElement>('button, [role="button"], a[href]')
+  return target.closest<HTMLElement>('button, [role="button"], [role="menuitem"], a[href]')
 }
 
 /** True if the element is inside an open dialog/modal. */
@@ -504,6 +504,43 @@ export function classifyRepost(text: string): 'instant' | 'with_thoughts' {
   return containsAny(text, WITH_THOUGHTS_WORDS) ? 'with_thoughts' : 'instant'
 }
 
+/**
+ * Classify a click on an OPTION of an already-open repost menu. In the 2026
+ * dropdown markup options are bare `<a>` elements — no href, no role, no menu
+ * ancestor — so neither closestButton nor isMenuItemClick can see them. Walks
+ * up from the click target looking for a small repost-worded element that is
+ * not the menu trigger. The word match alone is not specific enough for an
+ * always-on listener: the caller must gate this on the repost menu having
+ * just been opened.
+ */
+export function repostMenuSelection(
+  target: EventTarget | null,
+  maxDepth = 6,
+): 'instant' | 'with_thoughts' | null {
+  let el = target instanceof Element ? target : null
+  for (let depth = 0; el && depth < maxDepth; depth++, el = el.parentElement) {
+    // Reached the trigger itself (or another menu opener) — not a selection.
+    if (el instanceof HTMLElement && opensMenu(el)) return null
+    const text = norm(el.textContent).trim()
+    // Menu options are short ("Repost" + one-line description). A long text
+    // means we walked out into the menu container or the post body, where
+    // classification would mix both options' wording. A leading digit means
+    // a social-proof counter ("2 reposts"), never a menu option.
+    if (text.length === 0 || text.length > 200 || /^\d/.test(text)) continue
+    const accessible = el.getAttribute('aria-label') ? controlText(el) : text
+    // A single option mentions "repost" once; the container listing both
+    // options mentions it per option — skip those, keep walking.
+    let hits = 0
+    for (const w of REPOST_WORDS) {
+      for (let i = accessible.indexOf(w); i !== -1; i = accessible.indexOf(w, i + w.length)) hits++
+    }
+    if (hits === 0) continue
+    if (hits > 1) continue
+    return classifyRepost(accessible)
+  }
+  return null
+}
+
 // ---------------------------------------------------------------------------
 // Messages
 // ---------------------------------------------------------------------------
@@ -702,6 +739,55 @@ export function extractSSI(root: ParentNode = document): SSIScores | null {
       : undefined) ?? complete[0]
   if (components) return { total: current ?? Math.round(ssiGroupSum(components)), ...components }
   return current !== undefined ? { total: current } : null
+}
+
+// ---------------------------------------------------------------------------
+// Profile-views analytics page — /analytics/profile-views/
+// ---------------------------------------------------------------------------
+
+/** Reading off the analytics page. Mirrors ProfileViewsEntry minus the timestamp. */
+export interface ProfileViewsSnapshot {
+  viewers: number
+  rangeDays?: number
+}
+
+// Captured live 2026-07-04: the count and its caption are bare sibling <p>s in
+// a hashed-class div —
+//   <div><p>54</p><p>Profile viewers in the past 90 days</p></div>
+// so the match runs on the parent's combined text, where the number abuts the
+// caption with no whitespace ("54profile viewers in the past 90 days"). The
+// ancestor above that also prepends the range dropdown ("past 90 days54…"),
+// which the leading-digit requirement rejects; the Premium upsell ("Unlock
+// your profile views…") and the viewer breakdown rows ("6 recruiters") fail
+// the word tests.
+const PROFILE_VIEWERS_STEMS = ['viewer', 'просмотр', 'посетител', 'wyświetl'] as const
+const PROFILE_STEMS = ['profile', 'профил', 'profil'] as const
+const PROFILE_VIEWS_COUNT_RE = /^(\d{1,3}(?:[\s ,.]\d{3})*|\d+)/
+const PROFILE_VIEWS_RANGE_RE = /(\d{1,3})\s*(?:day|дн|dni)/
+
+/**
+ * Read the current "Who's viewed your profile" count from the analytics page.
+ * Purely observational. Prefers the shortest matching text, i.e. the tightest
+ * element wrapping the count and its caption.
+ */
+export function extractProfileViews(root: ParentNode = document): ProfileViewsSnapshot | null {
+  let best: { snapshot: ProfileViewsSnapshot; length: number } | null = null
+  for (const el of root.querySelectorAll('*')) {
+    const t = compactText(el)
+    if (!t || t.length > 140) continue
+    if (!containsAny(t, PROFILE_VIEWERS_STEMS) || !containsAny(t, PROFILE_STEMS)) continue
+    const count = t.match(PROFILE_VIEWS_COUNT_RE)
+    if (!count) continue
+    const viewers = Number.parseInt(count[1].replace(/\D/g, ''), 10)
+    if (!Number.isFinite(viewers)) continue
+    if (best && t.length >= best.length) continue
+    const range = t.match(PROFILE_VIEWS_RANGE_RE)
+    best = {
+      snapshot: { viewers, rangeDays: range ? Number(range[1]) : undefined },
+      length: t.length,
+    }
+  }
+  return best?.snapshot ?? null
 }
 
 // ---------------------------------------------------------------------------

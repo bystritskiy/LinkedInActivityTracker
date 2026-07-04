@@ -17,6 +17,8 @@ export interface DaySummary {
   posts: number
   follows: number
   ssi?: number
+  /** Latest "Who's viewed your profile" count observed this day. */
+  profileViewers?: number
 }
 
 export function summarizeStats(stats: DailyStats): DaySummary {
@@ -34,6 +36,7 @@ export function summarizeStats(stats: DailyStats): DaySummary {
     posts: c.post ?? 0,
     follows: c.follow ?? 0,
     ssi: stats.ssi?.total,
+    profileViewers: stats.profileViews?.viewers,
   }
 }
 

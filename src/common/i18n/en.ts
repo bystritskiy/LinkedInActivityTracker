@@ -61,6 +61,7 @@ export const en = {
   'dash.history.date': 'Date',
   'dash.history.time': 'Time',
   'dash.history.empty': 'No history yet.',
+  'dash.history.profileViewers': 'Viewers',
 
   'dash.ssi.heading': 'Social Selling Index',
   'dash.ssi.total': 'Total SSI',
@@ -76,6 +77,12 @@ export const en = {
   'dash.ssi.disclaimer':
     'Activity and SSI are shown side by side. This is a visual comparison only and does not imply cause and effect.',
 
+  'dash.views.heading': 'Profile viewers',
+  'dash.views.viewers': 'Viewers',
+  'dash.views.rangeDays': 'Period (days)',
+  'dash.views.noData':
+    'No entries yet. Open “Who’s viewed your profile” on LinkedIn to record today’s count.',
+
   'dash.goals.heading': 'Daily goals',
   'dash.goals.saved': 'Goals saved.',
   'dash.goals.activeMinutes': 'Active minutes',
@@ -85,7 +92,7 @@ export const en = {
     'This extension never performs actions on LinkedIn. It only records actions that you manually complete in your browser. All activity data is stored locally on your device.',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
-    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, and SSI scores (entered by hand or read from the SSI page when you open it).',
+    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, and the aggregate profile-viewer count (read from the SSI / analytics pages when you open them, or entered by hand).',
   'dash.privacy.whatNotStored': 'What is never stored',
   'dash.privacy.whatNotStoredBody':
     'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
@@ -125,6 +132,7 @@ export const en = {
   'settings.language': 'Language',
 
   'toast.ssiRecorded': 'SSI recorded: {total}',
+  'toast.profileViewsRecorded': 'Profile viewers recorded: {viewers}',
 } as const
 
 export type MessageKey = keyof typeof en

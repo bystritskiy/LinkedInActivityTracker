@@ -8,6 +8,8 @@ describe('page context', () => {
     expect(detectPageType('/company/openai/')).toBe('company')
     expect(detectPageType('/search/results/people/')).toBe('search')
     expect(detectPageType('/sales/ssi')).toBe('ssi')
+    expect(detectPageType('/analytics/profile-views/')).toBe('analytics')
+    expect(detectPageType('/me/profile-views')).toBe('analytics')
     expect(detectPageType('/unknown')).toBe('other')
   })
 

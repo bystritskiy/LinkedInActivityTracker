@@ -16,6 +16,7 @@ import type {
   LocaleCode,
   NotificationSettings,
   PrivacySettings,
+  ProfileViewsEntry,
   SSIEntry,
   StorageRoot,
   ThemePreference,
@@ -51,6 +52,7 @@ export type ContentMessage =
     }
   | { kind: 'activeTick'; seconds: number; pageType: LinkedInPageType }
   | { kind: 'ssiSnapshot'; dayKey: string; ssi: SSIEntry }
+  | { kind: 'profileViewsSnapshot'; dayKey: string; entry: ProfileViewsEntry }
   | {
       kind: 'diagnostic'
       level: DiagnosticLevel

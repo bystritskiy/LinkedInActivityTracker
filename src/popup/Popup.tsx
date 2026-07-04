@@ -101,6 +101,11 @@ export function Popup() {
         <strong>{vm.summary.ssi ?? '-'}</strong>
       </div>
 
+      <div className="quick-stats">
+        <span>{vm.t('dash.views.heading')}</span>
+        <strong>{vm.summary.profileViewers ?? '-'}</strong>
+      </div>
+
       <footer>
         <button type="button" onClick={openDashboard}>
           {vm.t('popup.openDashboard')}

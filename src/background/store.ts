@@ -36,6 +36,7 @@ import {
   removeEventById,
   removeReactionByDedupKey,
   setActiveSeconds,
+  setProfileViews,
   setSSI,
   todayKey,
 } from './reducer'
@@ -158,6 +159,17 @@ async function handleContent(msg: ContentMessage): Promise<void> {
         setSSI(root, msg.dayKey, { ...msg.ssi, source: 'automatic' })
         setSelectorHealth(root, 'ssi', 'working')
         pushDiagnostic(root, 'info', 'ssi', 'ssi_recorded', `total=${msg.ssi.total}`)
+      })
+      return
+    }
+    case 'profileViewsSnapshot': {
+      await withRoot((root) => {
+        if (root.settings.paused) return
+        // Like SSI: every page visit appends an observation, so the history
+        // reflects when the user actually checked.
+        setProfileViews(root, msg.dayKey, { ...msg.entry, source: 'automatic' })
+        setSelectorHealth(root, 'profileViews', 'working')
+        pushDiagnostic(root, 'info', 'profileViews', 'profile_views_recorded', `viewers=${msg.entry.viewers}`)
       })
       return
     }

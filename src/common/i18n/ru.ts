@@ -63,6 +63,7 @@ export const ru: Record<MessageKey, string> = {
   'dash.history.date': 'Дата',
   'dash.history.time': 'Время',
   'dash.history.empty': 'Истории пока нет.',
+  'dash.history.profileViewers': 'Просмотры',
 
   'dash.ssi.heading': 'Social Selling Index',
   'dash.ssi.total': 'Общий SSI',
@@ -79,6 +80,12 @@ export const ru: Record<MessageKey, string> = {
   'dash.ssi.disclaimer':
     'Активность и SSI показаны рядом. Это только визуальное сопоставление и не означает причинно-следственной связи.',
 
+  'dash.views.heading': 'Просмотры профиля',
+  'dash.views.viewers': 'Просмотревшие',
+  'dash.views.rangeDays': 'Период (дней)',
+  'dash.views.noData':
+    'Записей пока нет. Откройте «Кто просматривал ваш профиль» в LinkedIn, чтобы записать сегодняшнее значение.',
+
   'dash.goals.heading': 'Дневные цели',
   'dash.goals.saved': 'Цели сохранены.',
   'dash.goals.activeMinutes': 'Активные минуты',
@@ -88,7 +95,7 @@ export const ru: Record<MessageKey, string> = {
     'Расширение никогда не выполняет действия в LinkedIn вместо вас. Оно только фиксирует действия, которые вы вручную совершили в браузере. Все данные об активности хранятся локально на вашем устройстве.',
   'dash.privacy.whatStored': 'Что хранится',
   'dash.privacy.whatStoredBody':
-    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время и значения SSI (введённые вручную или считанные со страницы SSI при её открытии).',
+    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI и суммарное число просмотров профиля (считанные со страниц SSI и аналитики при их открытии или введённые вручную).',
   'dash.privacy.whatNotStored': 'Что никогда не хранится',
   'dash.privacy.whatNotStoredBody':
     'Не хранятся тексты сообщений, комментариев и постов. Нет имён, email, фотографий и содержимого профилей. Нет cookies, токенов и сетевых ответов.',
@@ -128,4 +135,5 @@ export const ru: Record<MessageKey, string> = {
   'settings.language': 'Язык',
 
   'toast.ssiRecorded': 'SSI записан: {total}',
+  'toast.profileViewsRecorded': 'Просмотры профиля записаны: {viewers}',
 }

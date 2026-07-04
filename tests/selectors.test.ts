@@ -3,6 +3,7 @@ import {
   COMMENT_ITEM_SELECTOR,
   classifyReaction,
   closestPostContainer,
+  extractProfileViews,
   extractSSI,
   connectBecamePending,
   connectCardScope,
@@ -16,6 +17,7 @@ import {
   matchesReactionWord,
   messageEditorFrom,
   opensMenu,
+  repostMenuSelection,
 } from '../src/content/selectors'
 
 function build(html: string): HTMLElement {
@@ -210,6 +212,68 @@ describe('reaction fallback predicates', () => {
     )
     expect(opensMenu(host.querySelector<HTMLElement>('#menu')!)).toBe(true)
     expect(opensMenu(host.querySelector<HTMLElement>('#plain')!)).toBe(false)
+  })
+})
+
+describe('repostMenuSelection (2026 dropdown markup)', () => {
+  // Mirrors the live chain captured in diagnostics: options are bare <a>
+  // elements (no href, no role) inside listitem/display-contents wrappers.
+  function repostMenu(): HTMLElement {
+    return build(`
+      <div class="_75228706" role="menu-less-popover">
+        <div data-display-contents="true">
+          <div role="listitem" class="_75228706">
+            <div class="_58c79b9a">
+              <a tabindex="0" id="instant" class="_6708dccf">
+                <span>Repost</span>
+                <span>Instantly bring George's post to others' feeds</span>
+              </a>
+            </div>
+          </div>
+          <div role="listitem" class="_75228706">
+            <div class="_58c79b9a">
+              <a tabindex="0" id="thoughts" class="_6708dccf">
+                <span>Repost with your thoughts</span>
+                <span>Create a new post with George's post attached</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>`)
+  }
+
+  it('classifies a click deep inside the instant option', () => {
+    const host = repostMenu()
+    const target = host.querySelector('#instant span')!
+    expect(repostMenuSelection(target)).toBe('instant')
+  })
+
+  it('classifies the with-thoughts option', () => {
+    const host = repostMenu()
+    const target = host.querySelector('#thoughts span')!
+    expect(repostMenuSelection(target)).toBe('with_thoughts')
+  })
+
+  it('returns null for the trigger button itself', () => {
+    const host = build(
+      `<button aria-label="Repost" aria-expanded="false"><span id="t">2</span></button>`,
+    )
+    expect(repostMenuSelection(host.querySelector('#t')!)).toBe(null)
+  })
+
+  it('ignores social-proof counters and unrelated clicks', () => {
+    const host = build(
+      `<div><a id="proof" href="/reposts/">2 reposts</a><button id="like" aria-label="React Like">Like</button></div>`,
+    )
+    expect(repostMenuSelection(host.querySelector('#proof')!)).toBe(null)
+    expect(repostMenuSelection(host.querySelector('#like')!)).toBe(null)
+  })
+
+  it('does not classify from a container mixing both options', () => {
+    const host = repostMenu()
+    // Clicking the wrapper (not an option) must not match via container text.
+    const wrapper = host.querySelector('[data-display-contents]')!
+    expect(repostMenuSelection(wrapper)).toBe(null)
   })
 })
 
@@ -419,6 +483,45 @@ describe('extractSSI', () => {
   it('returns null when the page has not rendered scores yet', () => {
     expect(extractSSI(build(`<div>Loading your Social Selling Index…</div>`))).toBeNull()
     expect(extractSSI(build(`<p>People in your network have an average SSI of 36.</p>`))).toBeNull()
+  })
+})
+
+// Profile-views analytics page structure captured live 2026-07-04 from
+// linkedin.com/analytics/profile-views/: the count and its caption are bare
+// sibling <p>s in a hashed-class div, so their combined text reads
+// "54Profile viewers in the past 90 days" with no whitespace between them.
+describe('extractProfileViews', () => {
+  it('parses the live 2026 analytics page: count and caption in sibling <p>s', () => {
+    const host = build(
+      `<main>
+         <h1>Who's viewed your profile</h1>
+         <button aria-haspopup="true">Past 90 days</button>
+         <div><p>54</p><p>Profile viewers in the past 90 days</p></div>
+         <div><p>6 recruiters</p><button>View</button></div>
+         <div><p>12 found you through My Network</p><button>View</button></div>
+         <p>Browse up to 3 viewers for free and unlock the full list with Premium</p>
+         <p>Unlock your profile views and jobs where you’d be a top applicant</p>
+       </main>`,
+    )
+    expect(extractProfileViews(host)).toEqual({ viewers: 54, rangeDays: 90 })
+  })
+
+  it('parses thousand separators and localized captions', () => {
+    const en = build(`<div><p>1,024</p><p>Profile viewers in the past 90 days</p></div>`)
+    expect(extractProfileViews(en)).toEqual({ viewers: 1024, rangeDays: 90 })
+    const ru = build(`<div><p>51</p><p>Просмотревшие профиль за последние 90 дней</p></div>`)
+    expect(extractProfileViews(ru)).toEqual({ viewers: 51, rangeDays: 90 })
+    const pl = build(`<div><p>7</p><p>Wyświetlenia profilu w ciągu ostatnich 90 dni</p></div>`)
+    expect(extractProfileViews(pl)).toEqual({ viewers: 7, rangeDays: 90 })
+  })
+
+  it('returns null when the count has not rendered yet', () => {
+    expect(extractProfileViews(build(`<h1>Who's viewed your profile</h1>`))).toBeNull()
+    expect(
+      extractProfileViews(
+        build(`<p>Unlock your profile views and jobs where you’d be a top applicant</p>`),
+      ),
+    ).toBeNull()
   })
 })
 

@@ -2,6 +2,7 @@ import type { ImportResult } from '../common/messages'
 import type {
   ActivitySession,
   DayRecord,
+  ProfileViewsEntry,
   SSIEntry,
   StorageRoot,
   TrackedEvent,
@@ -72,6 +73,16 @@ function sanitizeSSI(raw: unknown): SSIEntry | undefined {
   }
 }
 
+function sanitizeProfileViews(raw: unknown): ProfileViewsEntry | undefined {
+  if (!isObject(raw) || typeof raw.viewers !== 'number') return undefined
+  return {
+    timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : '',
+    viewers: raw.viewers,
+    rangeDays: typeof raw.rangeDays === 'number' ? raw.rangeDays : undefined,
+    source: raw.source === 'manual' ? 'manual' : raw.source === 'automatic' ? 'automatic' : undefined,
+  }
+}
+
 function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
   if (!isObject(raw)) return null
   const eventsRaw = Array.isArray(raw.events) ? raw.events : []
@@ -84,6 +95,10 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
   const ssiEntries = ssiEntriesRaw
     .map(sanitizeSSI)
     .filter((s): s is SSIEntry => s !== undefined)
+  const profileViewsRaw = Array.isArray(raw.profileViewsEntries) ? raw.profileViewsEntries : []
+  const profileViewsEntries = profileViewsRaw
+    .map(sanitizeProfileViews)
+    .filter((s): s is ProfileViewsEntry => s !== undefined)
   const day: DayRecord = {
     dayKey,
     events,
@@ -91,11 +106,15 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
       .map(sanitizeSession)
       .filter((s): s is ActivitySession => s !== null),
     ssiEntries,
+    profileViewsEntries,
     stats: {
       dayKey,
       activeSeconds: typeof statsRaw.activeSeconds === 'number' ? statsRaw.activeSeconds : 0,
       counters: {},
       ssi: sanitizeSSI(statsRaw.ssi) ?? ssiEntries[ssiEntries.length - 1],
+      profileViews:
+        sanitizeProfileViews(statsRaw.profileViews) ??
+        profileViewsEntries[profileViewsEntries.length - 1],
     },
   }
   // Rebuild counters from the (validated) events so a tampered/corrupt counter
