@@ -95,11 +95,30 @@ section h3 {
   font-size: 16px;
 }
 
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2 {
+  margin-bottom: 6px;
+}
+
+.section-heading p {
+  max-width: 780px;
+  margin: 0;
+  color: #566779;
+}
+
 .goal-grid,
 .info-grid,
 .form-grid,
 .toggle-grid,
-.diagnostic-grid {
+.diagnostic-grid,
+.analytics-summary {
   display: grid;
   gap: 12px;
 }
@@ -132,6 +151,54 @@ section h3 {
   margin-top: 4px;
   font-size: 22px;
   font-variant-numeric: tabular-nums;
+}
+
+.analytics-tab {
+  display: grid;
+  gap: 8px;
+}
+
+.analytics-tab h3 {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.auto-record-hint {
+  color: #566779;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auto-record-hint a {
+  color: #0a66c2;
+  text-decoration: none;
+}
+
+.auto-record-hint a:hover {
+  text-decoration: underline;
+}
+
+.analytics-summary {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 10px;
+}
+
+.analytics-card {
+  min-height: 92px;
+  border-color: #cbd7e3;
+}
+
+.analytics-card strong {
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.analytics-card em {
+  display: block;
+  margin-top: 8px;
+  color: #566779;
+  font-size: 12px;
+  font-style: normal;
 }
 
 .bar {
@@ -211,6 +278,29 @@ table {
   background: #ffffff;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid #d8e0e8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.table-scroll table {
+  margin-top: 0;
+}
+
+.analytics-table {
+  min-width: 900px;
+}
+
+.analytics-table.compact {
+  min-width: 620px;
+}
+
+.analytics-table.wide {
+  min-width: 1280px;
+}
+
 th,
 td {
   border-bottom: 1px solid #d8e0e8;
@@ -222,7 +312,12 @@ td {
 th {
   color: #566779;
   font-size: 12px;
+  line-height: 1.25;
   text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .notice,
@@ -289,6 +384,7 @@ button.danger {
   .info-grid article,
   .diagnostic-grid div,
   .toggle-grid label,
+  .table-scroll,
   table {
     border-color: #334154;
     background: #1a222c;
@@ -301,7 +397,10 @@ button.danger {
 
   .app-header p,
   section > p,
+  .section-heading p,
   .metric span,
+  .analytics-card em,
+  .auto-record-hint,
   .toolbar label,
   .form-grid label,
   th,
@@ -310,6 +409,7 @@ button.danger {
   }
 
   .tabs,
+  .table-scroll,
   th,
   td,
   .danger-zone {
@@ -318,5 +418,9 @@ button.danger {
 
   .bar {
     background: #334154;
+  }
+
+  .auto-record-hint a {
+    color: #8ec5ff;
   }
 }

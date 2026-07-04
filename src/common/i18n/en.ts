@@ -76,7 +76,8 @@ export const en = {
   'dash.ssi.history': 'Observation history',
   'dash.ssi.source': 'Source',
   'dash.ssi.date': 'Date',
-  'dash.ssi.noData': 'No SSI entries yet. Add today’s value to start the chart.',
+  'dash.ssi.noData':
+    'No SSI entries yet. Open linkedin.com/sales/ssi so the extension can record it.',
   'dash.ssi.disclaimer':
     'Activity and SSI are shown side by side. This is a visual comparison only and does not imply cause and effect.',
 

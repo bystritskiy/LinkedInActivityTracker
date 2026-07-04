@@ -7,6 +7,7 @@ import { goalRows, summarizeStats } from '../common/summary'
 import type {
   DailyGoals,
   LinkedInDashboardEntry,
+  LocaleCode,
   Settings,
   StorageRoot,
   TrackedEvent,
@@ -39,8 +40,6 @@ const manualTypes = [
   'repost',
   'post',
 ] as const satisfies readonly TrackedEventType[]
-
-type ManualType = (typeof manualTypes)[number]
 
 function eventLabel(settings: Settings, type: TrackedEventType): string {
   return translator(settings.locale)(eventLabelKey(type))
@@ -148,7 +147,7 @@ export function Dashboard() {
         />
       )}
       {tab === 'history' && <HistoryTab state={state} />}
-      {tab === 'ssi' && <SsiTab state={state} dayKey={todayKey} onRun={run} />}
+      {tab === 'ssi' && <SsiTab state={state} />}
       {tab === 'goals' && <GoalsTab state={state} onRun={run} />}
       {tab === 'privacy' && <PrivacyTab state={state} onRun={run} />}
       {tab === 'diagnostics' && <DiagnosticsTab state={state} onRun={run} />}
@@ -164,13 +163,7 @@ function TodayTab(props: {
   onRun: (action: () => Promise<void>, success?: string) => Promise<void>
 }) {
   const t = translator(props.state.settings.locale)
-  const [manualType, setManualType] = useState<ManualType>('comment')
-  const [activeMinutes, setActiveMinutes] = useState(String(props.summary.activeMinutes))
   const rows = goalRows(props.summary, props.state.settings.goals)
-
-  useEffect(() => {
-    setActiveMinutes(String(props.summary.activeMinutes))
-  }, [props.summary.activeMinutes])
 
   return (
     <section>
@@ -193,87 +186,6 @@ function TodayTab(props: {
             </div>
           </article>
         ))}
-      </div>
-
-      <div className="toolbar">
-        <button
-          type="button"
-          onClick={() => void props.onRun(() => exportAndDownload('markdown', props.dayKey))}
-        >
-          {t('popup.exportReport')}
-        </button>
-        <button type="button" onClick={() => void props.onRun(() => exportAndDownload('csv'))}>
-          CSV
-        </button>
-        <label>
-          {t('dash.today.activeTimeLabel')}
-          <input
-            type="number"
-            min="0"
-            value={activeMinutes}
-            onChange={(e) => setActiveMinutes(e.target.value)}
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() =>
-            void props.onRun(() =>
-              sendMessage({
-                kind: 'setActiveSeconds',
-                dayKey: props.dayKey,
-                seconds: Number(activeMinutes) * 60,
-              }),
-            )
-          }
-        >
-          {t('common.save')}
-        </button>
-      </div>
-
-      <div className="toolbar">
-        <label>
-          {t('dash.today.manualAdjust')}
-          <select
-            value={manualType}
-            onChange={(e) => setManualType(e.target.value as ManualType)}
-          >
-            {manualTypes.map((type) => (
-              <option key={type} value={type}>
-                {eventLabel(props.state.settings, type)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          onClick={() =>
-            void props.onRun(() =>
-              sendMessage({
-                kind: 'manualAdjust',
-                dayKey: props.dayKey,
-                eventType: manualType,
-                delta: 1,
-              }),
-            )
-          }
-        >
-          +1
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            void props.onRun(() =>
-              sendMessage({
-                kind: 'manualAdjust',
-                dayKey: props.dayKey,
-                eventType: manualType,
-                delta: -1,
-              }),
-            )
-          }
-        >
-          -1
-        </button>
       </div>
 
       <h3>{t('dash.today.events')}</h3>
@@ -377,16 +289,8 @@ function HistoryTab({ state }: { state: StorageRoot }) {
 
 function SsiTab(props: {
   state: StorageRoot
-  dayKey: string
-  onRun: (action: () => Promise<void>, success?: string) => Promise<void>
 }) {
   const t = translator(props.state.settings.locale)
-  const today = props.state.days[props.dayKey]?.stats.ssi
-  const [total, setTotal] = useState(String(today?.total ?? ''))
-  const [professionalBrand, setProfessionalBrand] = useState(String(today?.professionalBrand ?? ''))
-  const [findRightPeople, setFindRightPeople] = useState(String(today?.findRightPeople ?? ''))
-  const [engageWithInsights, setEngageWithInsights] = useState(String(today?.engageWithInsights ?? ''))
-  const [buildRelationships, setBuildRelationships] = useState(String(today?.buildRelationships ?? ''))
 
   // All observations across all days, newest first. Pre-v2 days may carry only
   // the single stats.ssi snapshot.
@@ -414,153 +318,215 @@ function SsiTab(props: {
           : [],
     )
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+  const latestSSI = entries[0]
+  const latestViews = viewEntries[0]
+  const latestDashboard = dashboardEntries[0]
 
   return (
-    <section>
-      <h2>{t('dash.ssi.heading')}</h2>
-      <p>{t('dash.ssi.disclaimer')}</p>
-      <div className="form-grid">
-        <NumberField label={t('dash.ssi.total')} value={total} onChange={setTotal} />
-        <NumberField
-          label={t('dash.ssi.professionalBrand')}
-          value={professionalBrand}
-          onChange={setProfessionalBrand}
+    <section className="analytics-tab">
+      <div className="section-heading">
+        <div>
+          <h2>{t('nav.ssi')}</h2>
+          <p>{t('dash.ssi.disclaimer')}</p>
+        </div>
+      </div>
+
+      <div className="analytics-summary">
+        <MetricCard
+          label={t('dash.ssi.total')}
+          value={latestSSI?.total}
+          meta={latestSSI?.timestamp ? new Date(latestSSI.timestamp).toLocaleString() : undefined}
         />
-        <NumberField
-          label={t('dash.ssi.findRightPeople')}
-          value={findRightPeople}
-          onChange={setFindRightPeople}
+        <MetricCard
+          label={t('dash.views.viewers')}
+          value={latestViews?.viewers}
+          meta={latestViews?.rangeDays ? `${latestViews.rangeDays}d` : undefined}
         />
-        <NumberField
-          label={t('dash.ssi.engageWithInsights')}
-          value={engageWithInsights}
-          onChange={setEngageWithInsights}
+        <MetricCard
+          label={t('dash.linkedinDashboard.postImpressions')}
+          value={latestDashboard?.postImpressions}
+          meta={
+            latestDashboard?.postImpressionsRangeDays
+              ? `${latestDashboard.postImpressionsRangeDays}d`
+              : undefined
+          }
         />
-        <NumberField
-          label={t('dash.ssi.buildRelationships')}
-          value={buildRelationships}
-          onChange={setBuildRelationships}
+        <MetricCard
+          label={t('dash.linkedinDashboard.followers')}
+          value={latestDashboard?.followers}
+          meta={
+            latestDashboard?.followersChangePercent !== undefined
+              ? `${latestDashboard.followersChangePercent}%`
+              : undefined
+          }
+        />
+        <MetricCard
+          label={t('dash.linkedinDashboard.searchAppearances')}
+          value={latestDashboard?.searchAppearances}
+          meta={latestDashboard?.searchAppearancesPeriod}
+        />
+        <MetricCard
+          label={t('dash.linkedinDashboard.weeklyComments')}
+          value={latestDashboard?.weeklyComments}
+          meta={latestDashboard?.weeklyPeriod}
         />
       </div>
-      <button
-        type="button"
-        onClick={() =>
-          void props.onRun(() =>
-            sendMessage({
-              kind: 'addSSI',
-              dayKey: props.dayKey,
-              ssi: {
-                timestamp: new Date().toISOString(),
-                total: Number(total),
-                professionalBrand: professionalBrand === '' ? undefined : Number(professionalBrand),
-                findRightPeople: findRightPeople === '' ? undefined : Number(findRightPeople),
-                engageWithInsights: engageWithInsights === '' ? undefined : Number(engageWithInsights),
-                buildRelationships: buildRelationships === '' ? undefined : Number(buildRelationships),
-              },
-            }),
-          )
-        }
-      >
-        {t('dash.ssi.add')}
-      </button>
-      <h3>{t('dash.ssi.history')}</h3>
+
+      <AutoRecordHeading
+        title={t('dash.ssi.heading')}
+        href="https://www.linkedin.com/sales/ssi"
+        label="linkedin.com/sales/ssi"
+        locale={props.state.settings.locale}
+      />
       {entries.length === 0 ? (
         <p>{t('dash.ssi.noData')}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('dash.ssi.date')}</th>
-              <th>{t('dash.ssi.total')}</th>
-              <th>{t('dash.ssi.professionalBrand')}</th>
-              <th>{t('dash.ssi.findRightPeople')}</th>
-              <th>{t('dash.ssi.engageWithInsights')}</th>
-              <th>{t('dash.ssi.buildRelationships')}</th>
-              <th>{t('dash.ssi.source')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e, i) => (
-              <tr key={`${e.timestamp}-${i}`}>
-                <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
-                <td>{e.total}</td>
-                <td>{e.professionalBrand ?? '-'}</td>
-                <td>{e.findRightPeople ?? '-'}</td>
-                <td>{e.engageWithInsights ?? '-'}</td>
-                <td>{e.buildRelationships ?? '-'}</td>
-                <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+        <div className="table-scroll">
+          <table className="analytics-table">
+            <thead>
+              <tr>
+                <th>{t('dash.ssi.date')}</th>
+                <th>{t('dash.ssi.total')}</th>
+                <th>{t('dash.ssi.professionalBrand')}</th>
+                <th>{t('dash.ssi.findRightPeople')}</th>
+                <th>{t('dash.ssi.engageWithInsights')}</th>
+                <th>{t('dash.ssi.buildRelationships')}</th>
+                <th>{t('dash.ssi.source')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {entries.map((e, i) => (
+                <tr key={`${e.timestamp}-${i}`}>
+                  <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                  <td>{formatMetricValue(e.total)}</td>
+                  <td>{formatMetricValue(e.professionalBrand)}</td>
+                  <td>{formatMetricValue(e.findRightPeople)}</td>
+                  <td>{formatMetricValue(e.engageWithInsights)}</td>
+                  <td>{formatMetricValue(e.buildRelationships)}</td>
+                  <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <h3>{t('dash.views.heading')}</h3>
+      <AutoRecordHeading
+        title={t('dash.views.heading')}
+        href="https://www.linkedin.com/analytics/profile-views/"
+        label="linkedin.com/analytics/profile-views"
+        locale={props.state.settings.locale}
+      />
       {viewEntries.length === 0 ? (
         <p>{t('dash.views.noData')}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('dash.ssi.date')}</th>
-              <th>{t('dash.views.viewers')}</th>
-              <th>{t('dash.views.rangeDays')}</th>
-              <th>{t('dash.ssi.source')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {viewEntries.map((e, i) => (
-              <tr key={`${e.timestamp}-${i}`}>
-                <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
-                <td>{e.viewers}</td>
-                <td>{e.rangeDays ?? '-'}</td>
-                <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+        <div className="table-scroll">
+          <table className="analytics-table compact">
+            <thead>
+              <tr>
+                <th>{t('dash.ssi.date')}</th>
+                <th>{t('dash.views.viewers')}</th>
+                <th>{t('dash.views.rangeDays')}</th>
+                <th>{t('dash.ssi.source')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {viewEntries.map((e, i) => (
+                <tr key={`${e.timestamp}-${i}`}>
+                  <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                  <td>{formatMetricValue(e.viewers)}</td>
+                  <td>{formatMetricValue(e.rangeDays)}</td>
+                  <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <h3>{t('dash.linkedinDashboard.heading')}</h3>
+      <AutoRecordHeading
+        title={t('dash.linkedinDashboard.heading')}
+        href="https://www.linkedin.com/dashboard/"
+        label="linkedin.com/dashboard"
+        locale={props.state.settings.locale}
+      />
       {dashboardEntries.length === 0 ? (
         <p>{t('dash.linkedinDashboard.noData')}</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('dash.ssi.date')}</th>
-              <th>{t('dash.linkedinDashboard.postImpressions')}</th>
-              <th>{t('dash.linkedinDashboard.postImpressionsRangeDays')}</th>
-              <th>{t('dash.linkedinDashboard.followers')}</th>
-              <th>{t('dash.linkedinDashboard.followersChangePercent')}</th>
-              <th>{t('dash.linkedinDashboard.profileViewers')}</th>
-              <th>{t('dash.linkedinDashboard.profileViewersRangeDays')}</th>
-              <th>{t('dash.linkedinDashboard.searchAppearances')}</th>
-              <th>{t('dash.linkedinDashboard.searchAppearancesPeriod')}</th>
-              <th>{t('dash.linkedinDashboard.searchAppearancesChangePercent')}</th>
-              <th>{t('dash.linkedinDashboard.weeklyPosts')}</th>
-              <th>{t('dash.linkedinDashboard.weeklyComments')}</th>
-              <th>{t('dash.linkedinDashboard.weeklyPeriod')}</th>
-              <th>{t('dash.ssi.source')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dashboardEntries.map((e, i) => (
-              <LinkedInDashboardRow
-                key={`${e.timestamp}-${i}`}
-                entry={e}
-                sourceLabel={e.source ? t(`dash.source.${e.source}`) : '-'}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table className="analytics-table wide">
+            <thead>
+              <tr>
+                <th>{t('dash.ssi.date')}</th>
+                <th>{t('dash.linkedinDashboard.postImpressions')}</th>
+                <th>{t('dash.linkedinDashboard.postImpressionsRangeDays')}</th>
+                <th>{t('dash.linkedinDashboard.followers')}</th>
+                <th>{t('dash.linkedinDashboard.followersChangePercent')}</th>
+                <th>{t('dash.linkedinDashboard.profileViewers')}</th>
+                <th>{t('dash.linkedinDashboard.profileViewersRangeDays')}</th>
+                <th>{t('dash.linkedinDashboard.searchAppearances')}</th>
+                <th>{t('dash.linkedinDashboard.searchAppearancesPeriod')}</th>
+                <th>{t('dash.linkedinDashboard.searchAppearancesChangePercent')}</th>
+                <th>{t('dash.linkedinDashboard.weeklyPosts')}</th>
+                <th>{t('dash.linkedinDashboard.weeklyComments')}</th>
+                <th>{t('dash.linkedinDashboard.weeklyPeriod')}</th>
+                <th>{t('dash.ssi.source')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dashboardEntries.map((e, i) => (
+                <LinkedInDashboardRow
+                  key={`${e.timestamp}-${i}`}
+                  entry={e}
+                  sourceLabel={e.source ? t(`dash.source.${e.source}`) : '-'}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )
 }
 
-function valueOrDash(value: number | string | undefined): number | string {
-  return value ?? '-'
+function formatMetricValue(value: number | string | undefined): string {
+  if (value === undefined || value === '') return '-'
+  return typeof value === 'number' ? value.toLocaleString() : value
+}
+
+function AutoRecordHeading(props: {
+  title: string
+  href: string
+  label: string
+  locale: LocaleCode
+}) {
+  const before = props.locale === 'ru' ? 'Откройте ' : 'Open '
+  const after =
+    props.locale === 'ru'
+      ? ', чтобы расширение записало данные'
+      : ' so the extension can record it'
+  return (
+    <h3>
+      {props.title}{' '}
+      <span className="auto-record-hint">
+        ({before}
+        <a href={props.href} target="_blank" rel="noreferrer">
+          {props.label}
+        </a>
+        {after})
+      </span>
+    </h3>
+  )
+}
+
+function MetricCard(props: { label: string; value: number | string | undefined; meta?: string }) {
+  return (
+    <article className="metric analytics-card">
+      <span>{props.label}</span>
+      <strong>{formatMetricValue(props.value)}</strong>
+      {props.meta && <em>{props.meta}</em>}
+    </article>
+  )
 }
 
 function LinkedInDashboardRow({
@@ -573,18 +539,18 @@ function LinkedInDashboardRow({
   return (
     <tr>
       <td>{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-'}</td>
-      <td>{valueOrDash(entry.postImpressions)}</td>
-      <td>{valueOrDash(entry.postImpressionsRangeDays)}</td>
-      <td>{valueOrDash(entry.followers)}</td>
-      <td>{valueOrDash(entry.followersChangePercent)}</td>
-      <td>{valueOrDash(entry.profileViewers)}</td>
-      <td>{valueOrDash(entry.profileViewersRangeDays)}</td>
-      <td>{valueOrDash(entry.searchAppearances)}</td>
-      <td>{valueOrDash(entry.searchAppearancesPeriod)}</td>
-      <td>{valueOrDash(entry.searchAppearancesChangePercent)}</td>
-      <td>{valueOrDash(entry.weeklyPosts)}</td>
-      <td>{valueOrDash(entry.weeklyComments)}</td>
-      <td>{valueOrDash(entry.weeklyPeriod)}</td>
+      <td>{formatMetricValue(entry.postImpressions)}</td>
+      <td>{formatMetricValue(entry.postImpressionsRangeDays)}</td>
+      <td>{formatMetricValue(entry.followers)}</td>
+      <td>{formatMetricValue(entry.followersChangePercent)}</td>
+      <td>{formatMetricValue(entry.profileViewers)}</td>
+      <td>{formatMetricValue(entry.profileViewersRangeDays)}</td>
+      <td>{formatMetricValue(entry.searchAppearances)}</td>
+      <td>{formatMetricValue(entry.searchAppearancesPeriod)}</td>
+      <td>{formatMetricValue(entry.searchAppearancesChangePercent)}</td>
+      <td>{formatMetricValue(entry.weeklyPosts)}</td>
+      <td>{formatMetricValue(entry.weeklyComments)}</td>
+      <td>{formatMetricValue(entry.weeklyPeriod)}</td>
       <td>{sourceLabel}</td>
     </tr>
   )
