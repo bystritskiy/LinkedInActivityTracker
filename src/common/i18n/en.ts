@@ -29,7 +29,7 @@ export const en = {
   'events.reaction': 'Reactions',
   'events.comment': 'Comments',
   'events.reply': 'Replies',
-  'events.connection_request': 'Invitations',
+  'events.connection_request': 'Connects',
   'events.message': 'Messages',
   'events.repost': 'Reposts',
   'events.post': 'Posts',
@@ -69,6 +69,8 @@ export const en = {
   'dash.ssi.engageWithInsights': 'Engage with insights',
   'dash.ssi.buildRelationships': 'Build relationships',
   'dash.ssi.add': 'Add SSI entry',
+  'dash.ssi.history': 'Observation history',
+  'dash.ssi.source': 'Source',
   'dash.ssi.date': 'Date',
   'dash.ssi.noData': 'No SSI entries yet. Add today’s value to start the chart.',
   'dash.ssi.disclaimer':
@@ -83,7 +85,7 @@ export const en = {
     'This extension never performs actions on LinkedIn. It only records actions that you manually complete in your browser. All activity data is stored locally on your device.',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
-    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, and the SSI you enter by hand.',
+    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, and SSI scores (entered by hand or read from the SSI page when you open it).',
   'dash.privacy.whatNotStored': 'What is never stored',
   'dash.privacy.whatNotStoredBody':
     'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
@@ -121,6 +123,8 @@ export const en = {
   'settings.theme.light': 'Light',
   'settings.theme.dark': 'Dark',
   'settings.language': 'Language',
+
+  'toast.ssiRecorded': 'SSI recorded: {total}',
 } as const
 
 export type MessageKey = keyof typeof en

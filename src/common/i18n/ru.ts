@@ -31,7 +31,7 @@ export const ru: Record<MessageKey, string> = {
   'events.reaction': 'Реакции',
   'events.comment': 'Комментарии',
   'events.reply': 'Ответы',
-  'events.connection_request': 'Приглашения',
+  'events.connection_request': 'Коннекты',
   'events.message': 'Сообщения',
   'events.repost': 'Репосты',
   'events.post': 'Посты',
@@ -71,6 +71,8 @@ export const ru: Record<MessageKey, string> = {
   'dash.ssi.engageWithInsights': 'Взаимодействуйте с контентом',
   'dash.ssi.buildRelationships': 'Развивайте отношения',
   'dash.ssi.add': 'Добавить запись SSI',
+  'dash.ssi.history': 'История наблюдений',
+  'dash.ssi.source': 'Источник',
   'dash.ssi.date': 'Дата',
   'dash.ssi.noData':
     'Записей SSI пока нет. Добавьте сегодняшнее значение, чтобы начать график.',
@@ -86,7 +88,7 @@ export const ru: Record<MessageKey, string> = {
     'Расширение никогда не выполняет действия в LinkedIn вместо вас. Оно только фиксирует действия, которые вы вручную совершили в браузере. Все данные об активности хранятся локально на вашем устройстве.',
   'dash.privacy.whatStored': 'Что хранится',
   'dash.privacy.whatStoredBody':
-    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время и SSI, введённый вручную.',
+    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время и значения SSI (введённые вручную или считанные со страницы SSI при её открытии).',
   'dash.privacy.whatNotStored': 'Что никогда не хранится',
   'dash.privacy.whatNotStoredBody':
     'Не хранятся тексты сообщений, комментариев и постов. Нет имён, email, фотографий и содержимого профилей. Нет cookies, токенов и сетевых ответов.',
@@ -124,4 +126,6 @@ export const ru: Record<MessageKey, string> = {
   'settings.theme.light': 'Светлая',
   'settings.theme.dark': 'Тёмная',
   'settings.language': 'Язык',
+
+  'toast.ssiRecorded': 'SSI записан: {total}',
 }

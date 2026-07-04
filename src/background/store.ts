@@ -150,6 +150,17 @@ async function handleContent(msg: ContentMessage): Promise<void> {
       })
       return
     }
+    case 'ssiSnapshot': {
+      await withRoot((root) => {
+        if (root.settings.paused) return
+        // Every page visit appends an observation — even with unchanged
+        // scores — so the history reflects when the user actually checked.
+        setSSI(root, msg.dayKey, { ...msg.ssi, source: 'automatic' })
+        setSelectorHealth(root, 'ssi', 'working')
+        pushDiagnostic(root, 'info', 'ssi', 'ssi_recorded', `total=${msg.ssi.total}`)
+      })
+      return
+    }
     case 'diagnostic': {
       await withRoot((root) => {
         pushDiagnostic(root, msg.level, msg.source, msg.code, msg.message)
@@ -234,7 +245,7 @@ async function handleUi(
       })
     case 'addSSI':
       return withRoot((root) => {
-        setSSI(root, msg.dayKey, msg.ssi)
+        setSSI(root, msg.dayKey, { source: 'manual', ...msg.ssi })
         return ACK_OK
       })
     case 'export':

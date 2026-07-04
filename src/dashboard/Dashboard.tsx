@@ -373,6 +373,12 @@ function SsiTab(props: {
   const [engageWithInsights, setEngageWithInsights] = useState(String(today?.engageWithInsights ?? ''))
   const [buildRelationships, setBuildRelationships] = useState(String(today?.buildRelationships ?? ''))
 
+  // All observations across all days, newest first. Pre-v2 days may carry only
+  // the single stats.ssi snapshot.
+  const entries = Object.values(props.state.days)
+    .flatMap((d) => (d.ssiEntries?.length ? d.ssiEntries : d.stats.ssi ? [d.stats.ssi] : []))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
   return (
     <section>
       <h2>{t('dash.ssi.heading')}</h2>
@@ -421,6 +427,37 @@ function SsiTab(props: {
       >
         {t('dash.ssi.add')}
       </button>
+      <h3>{t('dash.ssi.history')}</h3>
+      {entries.length === 0 ? (
+        <p>{t('dash.ssi.noData')}</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>{t('dash.ssi.date')}</th>
+              <th>{t('dash.ssi.total')}</th>
+              <th>{t('dash.ssi.professionalBrand')}</th>
+              <th>{t('dash.ssi.findRightPeople')}</th>
+              <th>{t('dash.ssi.engageWithInsights')}</th>
+              <th>{t('dash.ssi.buildRelationships')}</th>
+              <th>{t('dash.ssi.source')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e, i) => (
+              <tr key={`${e.timestamp}-${i}`}>
+                <td>{e.timestamp ? new Date(e.timestamp).toLocaleString() : '-'}</td>
+                <td>{e.total}</td>
+                <td>{e.professionalBrand ?? '-'}</td>
+                <td>{e.findRightPeople ?? '-'}</td>
+                <td>{e.engageWithInsights ?? '-'}</td>
+                <td>{e.buildRelationships ?? '-'}</td>
+                <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
   )
 }

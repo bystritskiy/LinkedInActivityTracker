@@ -16,6 +16,7 @@ import { CommentDetector } from './detectors/comment'
 import { RepostDetector } from './detectors/repost'
 import { MessageDetector } from './detectors/message'
 import { PostDetector } from './detectors/post'
+import { SSIDetector } from './detectors/ssi'
 import { trace } from './messaging'
 
 async function boot(): Promise<void> {
@@ -31,6 +32,7 @@ async function boot(): Promise<void> {
     .register(new RepostDetector())
     .register(new MessageDetector())
     .register(new PostDetector())
+    .register(new SSIDetector())
     .start()
 
   console.debug('[LAT] content tracking started')

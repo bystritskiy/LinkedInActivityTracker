@@ -45,8 +45,21 @@ export function runMigrations(raw: unknown, fallbackVersion = '0.0.0'): StorageR
       typeof data.lastSeenVersion === 'string' ? data.lastSeenVersion : fallbackVersion
   }
 
+  // v1 -> v2: per-day SSI history (ssiEntries), seeded from the single
+  // stats.ssi snapshot that v1 kept.
+  if (version < 2 && isObject(data.days)) {
+    for (const day of Object.values(data.days)) {
+      if (!isObject(day)) continue
+      if (!Array.isArray(day.ssiEntries)) {
+        const stats = isObject(day.stats) ? day.stats : undefined
+        const ssi = stats && isObject(stats.ssi) ? stats.ssi : undefined
+        day.ssiEntries = ssi ? [ssi] : []
+      }
+    }
+  }
+
   // Future migrations go here:
-  // if ((data.schemaVersion as number) < 2) { ... }
+  // if ((data.schemaVersion as number) < 3) { ... }
 
   data.settings = mergeSettings(DEFAULT_SETTINGS, data.settings)
   data.schemaVersion = SCHEMA_VERSION

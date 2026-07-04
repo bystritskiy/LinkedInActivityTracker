@@ -318,6 +318,9 @@ const INVITE_CONTEXT_WORDS = [
   'zapro',
   'nawiąż',
 ] as const
+// "Send without a note" / «Отправить без заметки» / "Wyślij bez notatki" —
+// the 2026 invite dialog's send button references the note, not the invite.
+const INVITE_NOTE_WORDS = ['note', 'заметк', 'notatk'] as const
 
 /** The final "Send" button inside an invitation dialog. */
 export function isSendInvitationButton(btn: HTMLElement): boolean {
@@ -325,9 +328,97 @@ export function isSendInvitationButton(btn: HTMLElement): boolean {
   const control = norm(btn.getAttribute('data-control-name'))
   if (control.includes('invite') && containsAny(control, ['send'])) return true
   if (!containsAny(text, SEND_WORDS)) return false
+  if (containsAny(text, INVITE_NOTE_WORDS)) return true
   // Confirm it is an invitation flow: either the button itself references the
   // invite, or it lives inside the invitation dialog.
   return containsAny(text, INVITE_CONTEXT_WORDS) || withinDialog(btn)
+}
+
+// The primary "Connect" control. 2026 markup sends the invite immediately on
+// this click on most surfaces (My Network cards, search results) — no dialog.
+const CONNECT_EXACT_TEXTS = ['connect', 'установить контакт', 'nawiąż kontakt'] as const
+// aria-label form: "Invite {Name} to connect" / «Пригласить {имя} установить
+// контакт» / "Zaproś {imię}, aby nawiązać kontakt".
+const CONNECT_PHRASES = ['to connect', 'установить контакт'] as const
+// Post-send state: "Pending" / "Withdraw invitation" / «Отправлено» / «Отозвать».
+const CONNECT_PENDING_WORDS = [
+  'pending',
+  'withdraw',
+  'invitation sent',
+  'отозв',
+  'ожидан',
+  'отправлено',
+  'oczekuj',
+  'wycofaj',
+  'wysłano',
+] as const
+
+export function isConnectButton(btn: HTMLElement): boolean {
+  const text = controlText(btn).replace(/\s+/g, ' ').trim()
+  if (!text || containsAny(text, CONNECT_PENDING_WORDS)) return false
+  if ((CONNECT_EXACT_TEXTS as readonly string[]).includes(text)) return true
+  if (containsAny(text, CONNECT_PHRASES)) return true
+  // pl aria: invite word + kontakt, e.g. "Zaproś X do nawiązania kontaktu"
+  return containsAny(text, ['zapro', 'nawiąz']) && text.includes('kontakt')
+}
+
+/** Card / result-row scope around a Connect button, for post-click state checks. */
+export function connectCardScope(btn: HTMLElement): Element | null {
+  const card = btn.closest('[role="listitem"], li, [data-view-name]')
+  if (card) return card
+  // Fallback: a few ancestor levels, enough to catch an in-place button swap.
+  let scope: Element | null = btn.parentElement
+  for (let depth = 0; scope?.parentElement && depth < 3; depth++) scope = scope.parentElement
+  return scope
+}
+
+/** Did the Connect control (or its card) switch to a pending/sent state? */
+export function connectBecamePending(btn: HTMLElement, scope: Element | null): boolean {
+  if (document.contains(btn)) {
+    if (containsAny(controlText(btn), CONNECT_PENDING_WORDS)) return true
+    if (containsAny(norm(btn.textContent), CONNECT_PENDING_WORDS)) return true
+  }
+  if (!scope || !document.contains(scope)) return false
+  const controls = scope.querySelectorAll<HTMLElement>('button, [role="button"], span')
+  for (const el of controls) {
+    if (containsAny(controlText(el), CONNECT_PENDING_WORDS)) return true
+  }
+  return false
+}
+
+/**
+ * Is an invitation dialog (or at least its send button) currently on screen?
+ * Checked after a Connect click: if the click opened the add-a-note dialog,
+ * the direct-connect flow must stand down and let the dialog flow count.
+ * The send-button scan covers 2026 dialogs that may lack role="dialog".
+ */
+export function invitationUiOpen(): boolean {
+  const dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]')
+  for (const d of dialogs) {
+    if (containsAny(norm(d.textContent), INVITE_CONTEXT_WORDS)) return true
+  }
+  const buttons = document.querySelectorAll<HTMLElement>('button, [role="button"]')
+  for (const b of buttons) {
+    if (isSendInvitationButton(b)) return true
+  }
+  return false
+}
+
+/** "Invitation sent" toast/alert, a secondary confirmation for direct sends. */
+export function invitationSentToastVisible(): boolean {
+  const nodes = document.querySelectorAll(
+    '[role="alert"], [role="status"], [class*="toast"], [data-test-artdeco-toast]',
+  )
+  for (const n of nodes) {
+    const t = norm(n.textContent)
+    if (
+      containsAny(t, ['invit', 'приглашен', 'zaprosz']) &&
+      containsAny(t, ['sent', 'отправлен', 'wysłan'])
+    ) {
+      return true
+    }
+  }
+  return false
 }
 
 // ---------------------------------------------------------------------------
@@ -373,7 +464,7 @@ export function isCommentSubmitButton(btn: HTMLElement): boolean {
 export function nearestEditorScope(el: Element, maxDepth = 8): Element | null {
   let scope: Element | null = el.parentElement
   for (let depth = 0; scope && depth < maxDepth; depth++) {
-    if (scope.querySelector('[contenteditable="true"], textarea')) return scope
+    if (scope.querySelector(EDITABLE_SELECTOR)) return scope
     scope = scope.parentElement
   }
   return null
@@ -417,12 +508,68 @@ export function classifyRepost(text: string): 'instant' | 'with_thoughts' {
 // Messages
 // ---------------------------------------------------------------------------
 
-export function isMessageSendButton(btn: HTMLElement): boolean {
+const MESSAGE_WORDS = ['message', 'сообщени', 'wiadomo'] as const
+
+// 2026 React editors sometimes use contenteditable="plaintext-only".
+export const EDITABLE_SELECTOR =
+  '[contenteditable="true"], [contenteditable="plaintext-only"], textarea'
+
+/** aria-label / placeholder text that identifies what an editor is for. */
+function editorSignalText(el: Element): string {
+  return norm(
+    [
+      el.getAttribute('aria-label'),
+      el.getAttribute('placeholder'),
+      el.getAttribute('aria-placeholder'),
+      el.getAttribute('data-placeholder'),
+    ]
+      .filter(Boolean)
+      .join(' '),
+  )
+}
+
+/**
+ * The message-compose field for an event target (or null). 2026 markup has no
+ * stable classes; the editor is recognised by its own accessible text, e.g.
+ * "Write a message…" / «Напишите сообщение…» / "Napisz wiadomość…".
+ * On the dedicated /messaging/ page (`onMessagingPage`) every editor is a
+ * message composer — the 2026 compose field may carry no signal text at all.
+ */
+export function messageEditorFrom(
+  target: EventTarget | null,
+  onMessagingPage = false,
+): HTMLElement | null {
+  if (!(target instanceof Element)) return null
+  const ed = target.closest<HTMLElement>(EDITABLE_SELECTOR)
+  if (!ed) return null
+  if (onMessagingPage) return ed
+  if (containsAny(editorSignalText(ed), MESSAGE_WORDS)) return ed
+  // Legacy containers still gate positively when present.
+  if (ed.closest('[class*="msg-form"], [class*="messaging"]')) return ed
+  return null
+}
+
+/** A message-compose editor inside `scope`, identified by its own signal text. */
+export function findMessageEditor(scope: Element, onMessagingPage = false): HTMLElement | null {
+  for (const ed of scope.querySelectorAll<HTMLElement>(EDITABLE_SELECTOR)) {
+    if (onMessagingPage || containsAny(editorSignalText(ed), MESSAGE_WORDS)) return ed
+  }
+  return null
+}
+
+export function isMessageSendButton(btn: HTMLElement, onMessagingPage = false): boolean {
   const control = norm(btn.getAttribute('data-control-name'))
   if (control.includes('send') && control.includes('message')) return true
-  const inThread = btn.closest('[class*="msg-form"], [class*="messaging"]')
-  if (!inThread) return false
-  return containsAny(controlText(btn), SEND_WORDS)
+  const text = controlText(btn)
+  // aria "Send message" / «Отправить сообщение» — self-sufficient.
+  if (containsAny(text, SEND_WORDS) && containsAny(text, MESSAGE_WORDS)) return true
+  if (!containsAny(text, SEND_WORDS)) return false
+  // Legacy markup: any send-worded button inside the messaging form.
+  if (btn.closest('[class*="msg-form"], [class*="messaging"]')) return true
+  // 2026 markup: a send-worded button sharing a small scope with a
+  // message-compose editor (bare divs, no form, no stable classes).
+  const scope = nearestEditorScope(btn)
+  return !!scope && !!findMessageEditor(scope, onMessagingPage)
 }
 
 // ---------------------------------------------------------------------------
@@ -440,6 +587,124 @@ export function isPostShareButton(btn: HTMLElement): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// SSI (Social Selling Index) page — /sales/ssi
+// ---------------------------------------------------------------------------
+
+/** Scores read off the SSI page. Mirrors SSIEntry minus the timestamp. */
+export interface SSIScores {
+  total: number
+  professionalBrand?: number
+  findRightPeople?: number
+  engageWithInsights?: number
+  buildRelationships?: number
+}
+
+type SSIComponentKey = Exclude<keyof SSIScores, 'total'>
+
+// Component rows render as "12.05 | Establish your professional brand".
+// Stems must stay specific: "People in your network have an average SSI of N"
+// appears elsewhere on the page, so plain "people" would misfire.
+const SSI_COMPONENT_WORDS: Record<SSIComponentKey, readonly string[]> = {
+  professionalBrand: ['brand', 'бренд', 'mark'],
+  findRightPeople: ['right people', 'нужн', 'właściw', 'odpowiedni'],
+  engageWithInsights: ['insight', 'информаци', 'взаимодейств', 'контент', 'spostrzeż', 'treści'],
+  buildRelationships: ['relationship', 'отношен', 'relacj'],
+}
+
+const SSI_COMPONENT_KEYS = Object.keys(SSI_COMPONENT_WORDS) as SSIComponentKey[]
+
+// "33 out of 100" / «33 из 100» / "33 na 100". The spans may abut without
+// whitespace in textContent, hence \s* between the number and the words.
+const SSI_TOTAL_RE = /(?:^|\s)(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:out of|из|na)\s*100(?:\s|$)/
+const SSI_COMPONENT_ROW_RE = /^(\d{1,3}(?:[.,]\d{1,2})?)\s*\|\s*(.+)$/
+
+function compactText(el: Element): string {
+  return norm(el.textContent).replace(/\s+/g, ' ').trim()
+}
+
+function parseScore(raw: string): number {
+  return Number.parseFloat(raw.replace(',', '.'))
+}
+
+type SSIComponentGroup = Partial<Record<SSIComponentKey, number>>
+
+function classifySSILabel(label: string): SSIComponentKey | null {
+  for (const key of SSI_COMPONENT_KEYS) {
+    if (containsAny(label, SSI_COMPONENT_WORDS[key])) return key
+  }
+  return null
+}
+
+// Captured live 2026-07-03: each score donut is backed by a hidden a11y table —
+//   <tr><th>Establish your professional brand</th><td>12.05</td></tr> …
+//   <tr><th>Remaining points</th><td>67</td></tr>
+// The page holds three such tables (current SSI, industry average, network
+// average), so rows must be grouped per table and the right table picked by
+// cross-checking against the current total.
+function ssiGroupFromTable(table: Element): SSIComponentGroup {
+  const group: SSIComponentGroup = {}
+  for (const tr of table.querySelectorAll('tr')) {
+    const key = classifySSILabel(norm(tr.querySelector('th')?.textContent))
+    const valueText = compactText(tr.querySelector('td') ?? tr)
+    if (!key || !valueText) continue
+    const value = parseScore(valueText)
+    if (value >= 0 && value <= 25) group[key] = value
+  }
+  return group
+}
+
+// Fallback for a table-less rendering: single elements reading
+// "12.05 | Establish your professional brand".
+function ssiGroupFromPipeRows(root: ParentNode): SSIComponentGroup {
+  const group: SSIComponentGroup = {}
+  for (const el of root.querySelectorAll('*')) {
+    const t = compactText(el)
+    if (!t || t.length > 90) continue
+    const row = t.match(SSI_COMPONENT_ROW_RE)
+    if (!row) continue
+    const value = parseScore(row[1])
+    const key = classifySSILabel(row[2])
+    if (key && value >= 0 && value <= 25) group[key] = value
+  }
+  return group
+}
+
+function ssiGroupSum(group: SSIComponentGroup): number {
+  return SSI_COMPONENT_KEYS.reduce((acc, k) => acc + (group[k] ?? 0), 0)
+}
+
+/**
+ * Read the current SSI scores from the /sales/ssi page. Purely observational.
+ * The total comes from the donut caption ("N out of 100" — the current-SSI
+ * donut renders before the industry/network average ones); the components come
+ * from the donut's backing table, matched to that total via the sum invariant
+ * (each component is 0–25 and the four add up to the total).
+ */
+export function extractSSI(root: ParentNode = document): SSIScores | null {
+  const totals: number[] = []
+  for (const el of root.querySelectorAll('*')) {
+    const t = compactText(el)
+    if (!t || t.length > 40) continue
+    const m = t.match(SSI_TOTAL_RE)
+    if (!m) continue
+    const v = parseScore(m[1])
+    if (v >= 0 && v <= 100 && !totals.includes(v)) totals.push(v)
+  }
+  const groups = [...root.querySelectorAll('table')].map(ssiGroupFromTable)
+  groups.push(ssiGroupFromPipeRows(root))
+  const complete = groups.filter((g) => SSI_COMPONENT_KEYS.every((k) => g[k] !== undefined))
+  const current = totals[0]
+  // Prefer the component group whose sum agrees with the current total; the
+  // average donuts have identically-shaped tables with different numbers.
+  const components =
+    (current !== undefined
+      ? complete.find((g) => Math.abs(ssiGroupSum(g) - current) <= 2)
+      : undefined) ?? complete[0]
+  if (components) return { total: current ?? Math.round(ssiGroupSum(components)), ...components }
+  return current !== undefined ? { total: current } : null
+}
+
+// ---------------------------------------------------------------------------
 // Confirmation helpers (DOM state before/after a user action)
 // ---------------------------------------------------------------------------
 
@@ -447,16 +712,27 @@ export function isPostShareButton(btn: HTMLElement): boolean {
 // componentkey="replaceableComment_urn:li:comment:(urn:li:activity:…,…)".
 export const COMMENT_ITEM_SELECTOR =
   '[class*="comments-comment-item"], article[class*="comment"], [componentkey^="replaceableComment"]'
+// 2026 markup exposes no stable message-item classes; React componentkeys
+// containing message urns are the only structural hint.
 export const MESSAGE_ITEM_SELECTOR =
-  '[class*="msg-s-event-listitem"], [class*="message-list-item"]'
+  '[class*="msg-s-event-listitem"], [class*="message-list-item"], [componentkey*="essage"]'
 
 export function countMatching(root: ParentNode, selector: string): number {
   return root.querySelectorAll(selector).length
 }
 
+/** Trimmed text length of one editable element (no text is stored). */
+export function editorValueLength(ed: HTMLElement): number {
+  const text =
+    ed instanceof HTMLTextAreaElement || ed instanceof HTMLInputElement
+      ? ed.value
+      : ed.textContent ?? ''
+  return text.trim().length
+}
+
 /** Trimmed length of the editable field within a scope (no text is stored). */
 export function editorTextLength(scope: Element): number {
-  const ed = scope.querySelector<HTMLElement>('[contenteditable="true"], textarea, input[type="text"]')
+  const ed = scope.querySelector<HTMLElement>(`${EDITABLE_SELECTOR}, input[type="text"]`)
   if (!ed) return 0
   const text = ed instanceof HTMLTextAreaElement || ed instanceof HTMLInputElement ? ed.value : ed.textContent ?? ''
   return text.trim().length

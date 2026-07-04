@@ -10,12 +10,6 @@ export interface BuiltExport {
   content: string
 }
 
-function sortedSummaries(root: StorageRoot): DaySummary[] {
-  return Object.keys(root.days)
-    .sort()
-    .map((k) => summarizeStats(root.days[k].stats))
-}
-
 // Markdown: a single day's report (spec §15). Labels are intentionally English
 // and locale-independent so exports are portable.
 function buildMarkdown(root: StorageRoot, dayKey: string): string {
@@ -40,7 +34,7 @@ function buildMarkdown(root: StorageRoot, dayKey: string): string {
     `- Active time: ${s.activeMinutes} min`,
     `- Reactions: ${s.reactions}`,
     `- Comments: ${s.comments}`,
-    `- Invitations sent: ${s.connectionRequests}`,
+    `- Connects: ${s.connectionRequests}`,
     `- Messages: ${s.messages}`,
     `- Reposts: ${s.reposts}`,
     `- Posts: ${s.posts}`,
@@ -58,34 +52,47 @@ function csvField(v: string | number | undefined): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
-// CSV: one row per day (spec §15).
+// CSV: one row per day (spec §15). SSI columns hold the day's latest snapshot.
 function buildCsv(root: StorageRoot): string {
   const header = [
     'Date',
     'ActiveMinutes',
     'Reactions',
     'Comments',
-    'Invitations',
+    'Connects',
     'Messages',
     'Reposts',
     'Posts',
     'SSI',
+    'SSIProfessionalBrand',
+    'SSIFindRightPeople',
+    'SSIEngageWithInsights',
+    'SSIBuildRelationships',
   ]
-  const rows = sortedSummaries(root).map((s) =>
-    [
-      s.dayKey,
-      s.activeMinutes,
-      s.reactions,
-      s.comments,
-      s.connectionRequests,
-      s.messages,
-      s.reposts,
-      s.posts,
-      s.ssi,
-    ]
-      .map(csvField)
-      .join(','),
-  )
+  const rows = Object.keys(root.days)
+    .sort()
+    .map((k) => {
+      const day = root.days[k]
+      const s = summarizeStats(day.stats)
+      const ssi = day.stats.ssi
+      return [
+        s.dayKey,
+        s.activeMinutes,
+        s.reactions,
+        s.comments,
+        s.connectionRequests,
+        s.messages,
+        s.reposts,
+        s.posts,
+        s.ssi,
+        ssi?.professionalBrand,
+        ssi?.findRightPeople,
+        ssi?.engageWithInsights,
+        ssi?.buildRelationships,
+      ]
+        .map(csvField)
+        .join(',')
+    })
   return [header.join(','), ...rows].join('\n')
 }
 

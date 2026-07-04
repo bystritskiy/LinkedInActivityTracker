@@ -9,8 +9,13 @@ import type {
   DiagnosticLevel,
   LinkedInPageType,
   TrackedEvent,
+  TrackedEventType,
 } from '../common/types'
+import { dayKeyFromDate, nowIso } from '../common/date'
+import { eventLabelKey, t } from '../common/i18n'
 import { getSettings } from './settings'
+import { showToast } from './toast'
+import type { SSIScores } from './selectors'
 
 function send(msg: ContentMessage): void {
   try {
@@ -24,8 +29,23 @@ function send(msg: ContentMessage): void {
   }
 }
 
+/**
+ * Light on-page feedback that a confirmed action was counted ("Reactions +1").
+ * Mirrors the worker's gating (pause / per-type tracking toggle) so a toast is
+ * never shown for an event the worker will drop; the short dedup window may
+ * still absorb a rare duplicate emit, which collapses into the same toast.
+ */
+function eventToast(type: TrackedEventType, delta: '+1' | '−1'): void {
+  const settings = getSettings()
+  if (settings.paused) return
+  const toggle = type === 'reply' ? 'comment' : type
+  if (!settings.tracking[toggle]) return
+  showToast(`✓ ${t(settings.locale, eventLabelKey(type))} ${delta}`, 2500)
+}
+
 export function emitEvent(event: TrackedEvent): void {
   send({ kind: 'event', event })
+  eventToast(event.type, '+1')
 }
 
 export function emitReactionRemoved(args: {
@@ -36,10 +56,20 @@ export function emitReactionRemoved(args: {
   dayKey: string
 }): void {
   send({ kind: 'reactionRemoved', ...args })
+  eventToast('reaction', '−1')
 }
 
 export function emitActiveTick(seconds: number, pageType: LinkedInPageType): void {
   send({ kind: 'activeTick', seconds, pageType })
+}
+
+/** Scores read off the SSI page, recorded under today's dayKey. */
+export function emitSSISnapshot(scores: SSIScores): void {
+  send({
+    kind: 'ssiSnapshot',
+    dayKey: dayKeyFromDate(new Date()),
+    ssi: { timestamp: nowIso(), ...scores },
+  })
 }
 
 export function emitDiagnostic(

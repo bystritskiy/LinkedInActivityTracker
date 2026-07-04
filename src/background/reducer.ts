@@ -32,6 +32,7 @@ export function emptyDayRecord(dayKey: string, goalsSnapshot: DailyStats['goalsS
     stats: { ...emptyStats(dayKey), goalsSnapshot },
     events: [],
     sessions: [],
+    ssiEntries: [],
   }
 }
 
@@ -186,10 +187,19 @@ export function addActiveSeconds(
   session.pageTypes[pageType] = (session.pageTypes[pageType] ?? 0) + seconds
 }
 
-/** Set the SSI entry for a day. */
+/** Record an SSI observation: appended to the day's history, latest wins. */
 export function setSSI(root: StorageRoot, dayKey: string, ssi: SSIEntry): void {
   const day = ensureDay(root, dayKey)
+  day.ssiEntries ??= [] // pre-v2 records may predate the history array
+  day.ssiEntries.push(ssi)
   day.stats.ssi = ssi
+}
+
+/** The most recent SSI observation of a day (falls back to the v1 snapshot). */
+export function latestSSI(day: DayRecord | undefined): SSIEntry | undefined {
+  if (!day) return undefined
+  const entries = day.ssiEntries
+  return entries && entries.length > 0 ? entries[entries.length - 1] : day.stats.ssi
 }
 
 /** Today's dayKey in local time. */

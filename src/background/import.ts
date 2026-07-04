@@ -68,6 +68,7 @@ function sanitizeSSI(raw: unknown): SSIEntry | undefined {
     findRightPeople: typeof raw.findRightPeople === 'number' ? raw.findRightPeople : undefined,
     engageWithInsights: typeof raw.engageWithInsights === 'number' ? raw.engageWithInsights : undefined,
     buildRelationships: typeof raw.buildRelationships === 'number' ? raw.buildRelationships : undefined,
+    source: raw.source === 'manual' ? 'manual' : raw.source === 'automatic' ? 'automatic' : undefined,
   }
 }
 
@@ -79,17 +80,22 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
     .filter((e): e is TrackedEvent => e !== null)
   const statsRaw = isObject(raw.stats) ? raw.stats : {}
   const sessionsRaw = Array.isArray(raw.sessions) ? raw.sessions : []
+  const ssiEntriesRaw = Array.isArray(raw.ssiEntries) ? raw.ssiEntries : []
+  const ssiEntries = ssiEntriesRaw
+    .map(sanitizeSSI)
+    .filter((s): s is SSIEntry => s !== undefined)
   const day: DayRecord = {
     dayKey,
     events,
     sessions: sessionsRaw
       .map(sanitizeSession)
       .filter((s): s is ActivitySession => s !== null),
+    ssiEntries,
     stats: {
       dayKey,
       activeSeconds: typeof statsRaw.activeSeconds === 'number' ? statsRaw.activeSeconds : 0,
       counters: {},
-      ssi: sanitizeSSI(statsRaw.ssi),
+      ssi: sanitizeSSI(statsRaw.ssi) ?? ssiEntries[ssiEntries.length - 1],
     },
   }
   // Rebuild counters from the (validated) events so a tampered/corrupt counter

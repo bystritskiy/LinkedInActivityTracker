@@ -127,6 +127,8 @@ export interface SSIEntry {
   findRightPeople?: number
   engageWithInsights?: number
   buildRelationships?: number
+  /** How the entry was captured: read off the SSI page or typed in by hand. */
+  source?: EventSource
 }
 
 export interface DailyGoals {
@@ -156,6 +158,8 @@ export interface DayRecord {
   stats: DailyStats
   events: TrackedEvent[]
   sessions: ActivitySession[]
+  /** Every SSI observation made this day (append-only); stats.ssi is the latest. */
+  ssiEntries: SSIEntry[]
 }
 
 // ---------------------------------------------------------------------------
@@ -229,6 +233,7 @@ export type DetectorKey =
   | 'post'
   | 'activeTime'
   | 'navigation'
+  | 'ssi'
 
 export type DetectorStatus = 'working' | 'needs_verification' | 'unknown'
 

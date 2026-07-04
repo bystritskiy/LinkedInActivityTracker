@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Activity Tracker",
-  "version": "0.1.5",
+  "version": "0.1.14",
   "description": "Locally and passively logs your own LinkedIn activity for a daily challenge. Never performs actions for you. All data stays on your device.",
   "default_locale": "en",
   "icons": {

@@ -3,11 +3,18 @@ import {
   COMMENT_ITEM_SELECTOR,
   classifyReaction,
   closestPostContainer,
+  extractSSI,
+  connectBecamePending,
+  connectCardScope,
   findReactionTrigger,
   isCommentSubmitButton,
+  isConnectButton,
+  isMessageSendButton,
   isReactionActive,
   isReplyContext,
+  isSendInvitationButton,
   matchesReactionWord,
+  messageEditorFrom,
   opensMenu,
 } from '../src/content/selectors'
 
@@ -203,5 +210,232 @@ describe('reaction fallback predicates', () => {
     )
     expect(opensMenu(host.querySelector<HTMLElement>('#menu')!)).toBe(true)
     expect(opensMenu(host.querySelector<HTMLElement>('#plain')!)).toBe(false)
+  })
+})
+
+describe('connect request selectors', () => {
+  it('isConnectButton matches the bare Connect button and the invite aria-label', () => {
+    const host = build(
+      `<button id="bare">Connect</button>
+       <button id="aria" aria-label="Invite John Doe to connect">Connect</button>
+       <button id="ru">Установить контакт</button>
+       <button id="pl" aria-label="Zaproś Jana Kowalskiego do nawiązania kontaktu">Nawiąż kontakt</button>`,
+    )
+    expect(isConnectButton(host.querySelector<HTMLElement>('#bare')!)).toBe(true)
+    expect(isConnectButton(host.querySelector<HTMLElement>('#aria')!)).toBe(true)
+    expect(isConnectButton(host.querySelector<HTMLElement>('#ru')!)).toBe(true)
+    expect(isConnectButton(host.querySelector<HTMLElement>('#pl')!)).toBe(true)
+  })
+
+  it('isConnectButton rejects pending state and lookalike controls', () => {
+    const host = build(
+      `<button id="pending" aria-label="Pending, click to withdraw invitation">Pending</button>
+       <button id="subscribe">Invite your connections to subscribe</button>
+       <button id="message">Message</button>`,
+    )
+    expect(isConnectButton(host.querySelector<HTMLElement>('#pending')!)).toBe(false)
+    expect(isConnectButton(host.querySelector<HTMLElement>('#subscribe')!)).toBe(false)
+    expect(isConnectButton(host.querySelector<HTMLElement>('#message')!)).toBe(false)
+  })
+
+  it('isSendInvitationButton matches "Send without a note" outside a detectable dialog (2026)', () => {
+    const host = build(
+      `<div><button id="nonote">Send without a note</button><button id="add">Add a note</button></div>`,
+    )
+    expect(isSendInvitationButton(host.querySelector<HTMLElement>('#nonote')!)).toBe(true)
+    expect(isSendInvitationButton(host.querySelector<HTMLElement>('#add')!)).toBe(false)
+  })
+
+  it('connectBecamePending sees an in-place label swap and a card-level swap', () => {
+    const host = build(
+      `<div role="listitem"><button id="b">Connect</button></div>`,
+    )
+    const btn = host.querySelector<HTMLElement>('#b')!
+    const scope = connectCardScope(btn)
+    expect(connectBecamePending(btn, scope)).toBe(false)
+    btn.setAttribute('aria-label', 'Pending, click to withdraw invitation')
+    expect(connectBecamePending(btn, scope)).toBe(true)
+    // card-level: original button replaced by a Pending control
+    btn.remove()
+    scope!.insertAdjacentHTML('beforeend', '<button>Pending</button>')
+    expect(connectBecamePending(btn, scope)).toBe(true)
+  })
+})
+
+describe('message selectors in the 2026 markup', () => {
+  function compose(editorAttrs: string, buttonHtml: string): HTMLElement {
+    return build(
+      `<div>
+         <div>
+           <div role="textbox" contenteditable="true" ${editorAttrs}>draft</div>
+           <div>
+             <button aria-label="Attach a file"></button>
+             ${buttonHtml}
+           </div>
+         </div>
+       </div>`,
+    )
+  }
+
+  it('detects a bare Send button next to a message-compose editor', () => {
+    const host = compose(
+      'aria-label="Write a message…"',
+      '<button id="b" aria-label="Send">Send</button>',
+    )
+    expect(isMessageSendButton(host.querySelector<HTMLElement>('#b')!)).toBe(true)
+  })
+
+  it('detects "Send message" by its own label, and localized variants', () => {
+    const host = build(
+      `<button id="en" aria-label="Send message">Send</button>
+       <button id="ru" aria-label="Отправить сообщение">Отправить</button>`,
+    )
+    expect(isMessageSendButton(host.querySelector<HTMLElement>('#en')!)).toBe(true)
+    expect(isMessageSendButton(host.querySelector<HTMLElement>('#ru')!)).toBe(true)
+  })
+
+  it('does not treat a send-worded button near a comment editor as a message send', () => {
+    const host = compose(
+      'aria-label="Text editor for creating comment"',
+      '<button id="b">Отправить</button>',
+    )
+    expect(isMessageSendButton(host.querySelector<HTMLElement>('#b')!)).toBe(false)
+  })
+
+  it('messageEditorFrom recognises the compose field by placeholder text', () => {
+    const host = build(
+      `<div role="textbox" contenteditable="true" aria-placeholder="Napisz wiadomość…"><span id="inner">hi</span></div>
+       <div id="plain" role="textbox" contenteditable="true" aria-label="Text editor for creating comment">x</div>`,
+    )
+    expect(messageEditorFrom(host.querySelector('#inner'))).not.toBeNull()
+    expect(messageEditorFrom(host.querySelector('#plain'))).toBeNull()
+  })
+})
+
+// SSI page structure captured live 2026-07-03 from linkedin.com/sales/ssi:
+// each donut ("N out of 100" figcaption) is backed by a hidden a11y table of
+// th/td rows including a "Remaining points" row; three donut+table groups on
+// the page (current SSI, industry average, network average).
+function ssiTable(pb: string, frp: string, ewi: string, br: string, remaining: string): string {
+  return `<table>
+      <tr><th>Category</th><th>value</th></tr>
+      <tr><th>Establish your professional brand</th><td>${pb}</td></tr>
+      <tr><th>Find the right people</th><td>${frp}</td></tr>
+      <tr><th>Engage with insights</th><td>${ewi}</td></tr>
+      <tr><th>Build relationships</th><td>${br}</td></tr>
+      <tr><th>Remaining points</th><td>${remaining}</td></tr>
+    </table>`
+}
+
+describe('extractSSI', () => {
+  it('parses the live 2026 page: donut captions plus backing a11y tables', () => {
+    const host = build(
+      `<main>
+         <h1>Your Social Selling Index</h1>
+         <div><span>Top</span><span>37%</span><p>Industry SSI rank</p></div>
+         <section>
+           <h2>Current Social Selling Index</h2>
+           <figure><figcaption>33 out of 100</figcaption></figure>
+           ${ssiTable('12.05', '4.76', '1', '15', '67')}
+         </section>
+         <section>
+           <h2>People in your industry</h2>
+           <figure><figcaption>29 out of 100</figcaption></figure>
+           ${ssiTable('11.27', '4.54', '1.56', '11.88', '71')}
+           <p>Sales professionals in your industry have an average SSI of 29.</p>
+         </section>
+         <section>
+           <h2>People in your network</h2>
+           <figure><figcaption>36 out of 100</figcaption></figure>
+           ${ssiTable('13.1', '8.2', '2.4', '12.3', '64')}
+           <p>People in your network have an average SSI of 36.</p>
+         </section>
+       </main>`,
+    )
+    expect(extractSSI(host)).toEqual({
+      total: 33,
+      professionalBrand: 12.05,
+      findRightPeople: 4.76,
+      engageWithInsights: 1,
+      buildRelationships: 15,
+    })
+  })
+
+  it('parses localized tables with comma decimals (ru)', () => {
+    const host = build(
+      `<section>
+         <p>32 из 100</p>
+         <table>
+           <tr><th>Создавайте профессиональный бренд</th><td>12,05</td></tr>
+           <tr><th>Находите нужных людей</th><td>4,76</td></tr>
+           <tr><th>Взаимодействуйте с контентом</th><td>0,6</td></tr>
+           <tr><th>Развивайте отношения</th><td>15</td></tr>
+         </table>
+       </section>`,
+    )
+    expect(extractSSI(host)).toEqual({
+      total: 32,
+      professionalBrand: 12.05,
+      findRightPeople: 4.76,
+      engageWithInsights: 0.6,
+      buildRelationships: 15,
+    })
+  })
+
+  it('matches the table to the current total when an average table renders first', () => {
+    const host = build(
+      `<main>
+         <p>33 out of 100</p>
+         ${ssiTable('11.27', '4.54', '1.56', '11.88', '71')}
+         ${ssiTable('12.05', '4.76', '1', '15', '67')}
+       </main>`,
+    )
+    expect(extractSSI(host)).toEqual({
+      total: 33,
+      professionalBrand: 12.05,
+      findRightPeople: 4.76,
+      engageWithInsights: 1,
+      buildRelationships: 15,
+    })
+  })
+
+  it('supports the "value | label" fallback rendering and a summed total', () => {
+    const host = build(
+      `<ul>
+         <li>12.05 | Establish your professional brand</li>
+         <li>4.76 | Find the right people</li>
+         <li>1 | Engage with insights</li>
+         <li>15 | Build relationships</li>
+       </ul>`,
+    )
+    expect(extractSSI(host)?.total).toBe(33)
+  })
+
+  it('records the total alone when component tables are absent', () => {
+    const host = build(`<figure><figcaption>33 out of 100</figcaption></figure>`)
+    expect(extractSSI(host)).toEqual({ total: 33 })
+  })
+
+  it('returns null when the page has not rendered scores yet', () => {
+    expect(extractSSI(build(`<div>Loading your Social Selling Index…</div>`))).toBeNull()
+    expect(extractSSI(build(`<p>People in your network have an average SSI of 36.</p>`))).toBeNull()
+  })
+})
+
+describe('message editor on the /messaging/ page (2026)', () => {
+  it('accepts any editable field when the page context is messaging', () => {
+    const host = build(
+      `<div role="textbox" contenteditable="true"><p id="inner">Thanks !</p></div>`,
+    )
+    const inner = host.querySelector('#inner')!
+    expect(messageEditorFrom(inner, false)).toBeNull()
+    expect(messageEditorFrom(inner, true)).not.toBeNull()
+  })
+
+  it('supports contenteditable="plaintext-only" editors', () => {
+    const host = build(
+      `<div id="ed" contenteditable="plaintext-only" aria-label="Write a message…">hi</div>`,
+    )
+    expect(messageEditorFrom(host.querySelector('#ed'), false)).not.toBeNull()
   })
 })

@@ -71,4 +71,29 @@ describe('reducer', () => {
     expect(day.sessions[0].pageTypes).toEqual({ feed: 5, messaging: 10 })
     expect(day.stats.ssi?.total).toBe(42)
   })
+
+  it('keeps a per-day history of SSI observations with the latest as the summary', () => {
+    const state = root()
+    setSSI(state, '2026-06-30', {
+      timestamp: '2026-06-30T09:00:00.000Z',
+      total: 32,
+      professionalBrand: 11.9,
+      source: 'automatic',
+    })
+    setSSI(state, '2026-06-30', {
+      timestamp: '2026-06-30T18:00:00.000Z',
+      total: 33,
+      professionalBrand: 12.05,
+      findRightPeople: 4.76,
+      engageWithInsights: 1,
+      buildRelationships: 15,
+      source: 'automatic',
+    })
+
+    const day = state.days['2026-06-30']
+    expect(day.ssiEntries).toHaveLength(2)
+    expect(day.ssiEntries[0].total).toBe(32)
+    expect(day.stats.ssi?.total).toBe(33)
+    expect(day.stats.ssi?.buildRelationships).toBe(15)
+  })
 })

@@ -50,6 +50,7 @@ export type ContentMessage =
       dayKey: string
     }
   | { kind: 'activeTick'; seconds: number; pageType: LinkedInPageType }
+  | { kind: 'ssiSnapshot'; dayKey: string; ssi: SSIEntry }
   | {
       kind: 'diagnostic'
       level: DiagnosticLevel
