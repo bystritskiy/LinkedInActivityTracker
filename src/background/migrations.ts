@@ -1,5 +1,6 @@
 import type { Settings, StorageRoot } from '../common/types'
 import { DEFAULT_SETTINGS, SCHEMA_VERSION } from '../common/constants'
+import { mergeGoals } from '../common/goals'
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -15,7 +16,7 @@ export function mergeSettings(defaults: Settings, stored: unknown): Settings {
   return {
     ...defaults,
     ...stored,
-    goals: { ...defaults.goals, ...(isObject(stored.goals) ? stored.goals : {}) },
+    goals: mergeGoals(defaults.goals, stored.goals),
     tracking: { ...defaults.tracking, ...(isObject(stored.tracking) ? stored.tracking : {}) },
     privacy: { ...defaults.privacy, ...(isObject(stored.privacy) ? stored.privacy : {}) },
     notifications: {
@@ -71,8 +72,21 @@ export function runMigrations(raw: unknown, fallbackVersion = '0.0.0'): StorageR
     }
   }
 
+  // v3 -> v4: per-day linkedin.com/dashboard/ history.
+  if (version < 4 && isObject(data.days)) {
+    for (const day of Object.values(data.days)) {
+      if (!isObject(day)) continue
+      if (!Array.isArray(day.linkedInDashboardEntries)) {
+        const stats = isObject(day.stats) ? day.stats : undefined
+        const dashboard =
+          stats && isObject(stats.linkedInDashboard) ? stats.linkedInDashboard : undefined
+        day.linkedInDashboardEntries = dashboard ? [dashboard] : []
+      }
+    }
+  }
+
   // Future migrations go here:
-  // if ((data.schemaVersion as number) < 4) { ... }
+  // if ((data.schemaVersion as number) < 5) { ... }
 
   data.settings = mergeSettings(DEFAULT_SETTINGS, data.settings)
   data.schemaVersion = SCHEMA_VERSION

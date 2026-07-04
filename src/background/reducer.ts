@@ -14,6 +14,7 @@ import {
   type DailyStats,
   type DayRecord,
   type LinkedInPageType,
+  type LinkedInDashboardEntry,
   type ProfileViewsEntry,
   type SSIEntry,
   type StorageRoot,
@@ -35,6 +36,7 @@ export function emptyDayRecord(dayKey: string, goalsSnapshot: DailyStats['goalsS
     sessions: [],
     ssiEntries: [],
     profileViewsEntries: [],
+    linkedInDashboardEntries: [],
   }
 }
 
@@ -203,6 +205,18 @@ export function setProfileViews(root: StorageRoot, dayKey: string, entry: Profil
   day.profileViewsEntries ??= [] // pre-v3 records may predate the history array
   day.profileViewsEntries.push(entry)
   day.stats.profileViews = entry
+}
+
+/** Record a LinkedIn dashboard observation: appended to the day's history, latest wins. */
+export function setLinkedInDashboard(
+  root: StorageRoot,
+  dayKey: string,
+  entry: LinkedInDashboardEntry,
+): void {
+  const day = ensureDay(root, dayKey)
+  day.linkedInDashboardEntries ??= [] // pre-v4 records may predate the history array
+  day.linkedInDashboardEntries.push(entry)
+  day.stats.linkedInDashboard = entry
 }
 
 /** The most recent SSI observation of a day (falls back to the v1 snapshot). */

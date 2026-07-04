@@ -15,7 +15,7 @@ import { dayKeyFromDate, nowIso } from '../common/date'
 import { eventLabelKey, t } from '../common/i18n'
 import { getSettings } from './settings'
 import { showToast } from './toast'
-import type { ProfileViewsSnapshot, SSIScores } from './selectors'
+import type { LinkedInDashboardSnapshot, ProfileViewsSnapshot, SSIScores } from './selectors'
 
 function send(msg: ContentMessage): void {
   try {
@@ -76,6 +76,15 @@ export function emitSSISnapshot(scores: SSIScores): void {
 export function emitProfileViewsSnapshot(snapshot: ProfileViewsSnapshot): void {
   send({
     kind: 'profileViewsSnapshot',
+    dayKey: dayKeyFromDate(new Date()),
+    entry: { timestamp: nowIso(), ...snapshot },
+  })
+}
+
+/** Aggregate metrics read off linkedin.com/dashboard/, recorded under today's dayKey. */
+export function emitLinkedInDashboardSnapshot(snapshot: LinkedInDashboardSnapshot): void {
+  send({
+    kind: 'linkedInDashboardSnapshot',
     dayKey: dayKeyFromDate(new Date()),
     entry: { timestamp: nowIso(), ...snapshot },
   })

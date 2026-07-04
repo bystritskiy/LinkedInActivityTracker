@@ -13,6 +13,7 @@ import {
 import { debug, emitDiagnostic, emitEvent, emitSelectorHealth, trace } from '../messaging'
 import { getSettings } from '../settings'
 import { makeEvent, pollConfirm } from './common'
+import { clearRepostWithThoughtsPending, markRepostWithThoughtsPending } from './share-composer'
 
 /** How long after the repost menu opens an option click is still attributed to it. */
 const MENU_WINDOW_MS = 15_000
@@ -24,9 +25,9 @@ const MENU_WINDOW_MS = 15_000
  * machine: a click on the repost TRIGGER (the social-bar control with
  * aria-expanded) arms a short window, and the next click inside that window
  * is classified by its text. Merely opening the menu never counts — the
- * trigger click itself only arms. "Repost with thoughts" opens the composer
- * and is published there; it is intentionally not counted here to avoid
- * double counting with the post detector.
+ * trigger click itself only arms. "Repost with thoughts" opens the composer;
+ * the final publish click is confirmed by the post detector and recorded as a
+ * repost with kind=with_thoughts.
  */
 export class RepostDetector implements LinkedInDetector {
   readonly key = 'repost' as const
@@ -67,7 +68,8 @@ export class RepostDetector implements LinkedInDetector {
 
     this.menuOpenedAt = 0
     if (kind !== 'instant') {
-      trace('repost', 'with_thoughts_composer', 'counted by post detector on publish')
+      markRepostWithThoughtsPending()
+      trace('repost', 'with_thoughts_composer', 'waiting for composer publish')
       return
     }
     pollConfirm(
@@ -97,5 +99,6 @@ export class RepostDetector implements LinkedInDetector {
   detach(): void {
     document.removeEventListener('click', this.onClick, true)
     this.menuOpenedAt = 0
+    clearRepostWithThoughtsPending()
   }
 }

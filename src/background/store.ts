@@ -21,6 +21,7 @@ import type {
   TrackedEventType,
 } from '../common/types'
 import { DEDUP_WINDOW_MS } from '../common/constants'
+import { mergeGoals } from '../common/goals'
 import {
   clearRoot,
   createEmptyRoot,
@@ -36,6 +37,7 @@ import {
   removeEventById,
   removeReactionByDedupKey,
   setActiveSeconds,
+  setLinkedInDashboard,
   setProfileViews,
   setSSI,
   todayKey,
@@ -102,7 +104,7 @@ function applySettingsPatch(settings: Settings, patch: SettingsPatch): void {
   }
   if (patch.paused !== undefined) settings.paused = patch.paused
   if (patch.debug !== undefined) settings.debug = patch.debug
-  if (patch.goals) settings.goals = { ...settings.goals, ...patch.goals }
+  if (patch.goals) settings.goals = mergeGoals(settings.goals, patch.goals)
   if (patch.tracking) settings.tracking = { ...settings.tracking, ...patch.tracking }
   if (patch.privacy) settings.privacy = { ...settings.privacy, ...patch.privacy }
   if (patch.notifications) {
@@ -173,6 +175,23 @@ async function handleContent(msg: ContentMessage): Promise<void> {
       })
       return
     }
+    case 'linkedInDashboardSnapshot': {
+      await withRoot((root) => {
+        if (root.settings.paused) return
+        // Like SSI/profile views: every page visit appends an observation, so
+        // the history reflects when the user actually checked the dashboard.
+        setLinkedInDashboard(root, msg.dayKey, { ...msg.entry, source: 'automatic' })
+        setSelectorHealth(root, 'linkedInDashboard', 'working')
+        pushDiagnostic(
+          root,
+          'info',
+          'linkedInDashboard',
+          'linkedin_dashboard_recorded',
+          `followers=${msg.entry.followers ?? 'n/a'};impressions=${msg.entry.postImpressions ?? 'n/a'}`,
+        )
+      })
+      return
+    }
     case 'diagnostic': {
       await withRoot((root) => {
         pushDiagnostic(root, msg.level, msg.source, msg.code, msg.message)
@@ -225,7 +244,7 @@ async function handleUi(
       })
     case 'setGoals':
       return withRoot((root) => {
-        root.settings.goals = { ...root.settings.goals, ...msg.goals }
+        root.settings.goals = mergeGoals(root.settings.goals, msg.goals)
         const today = root.days[todayKey()]
         if (today) today.stats.goalsSnapshot = { ...root.settings.goals }
         return ACK_OK

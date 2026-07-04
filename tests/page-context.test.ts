@@ -10,6 +10,7 @@ describe('page context', () => {
     expect(detectPageType('/sales/ssi')).toBe('ssi')
     expect(detectPageType('/analytics/profile-views/')).toBe('analytics')
     expect(detectPageType('/me/profile-views')).toBe('analytics')
+    expect(detectPageType('/dashboard/')).toBe('dashboard')
     expect(detectPageType('/unknown')).toBe('other')
   })
 

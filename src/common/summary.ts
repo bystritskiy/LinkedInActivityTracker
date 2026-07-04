@@ -19,6 +19,12 @@ export interface DaySummary {
   ssi?: number
   /** Latest "Who's viewed your profile" count observed this day. */
   profileViewers?: number
+  /** Latest post impressions observed on linkedin.com/dashboard/. */
+  postImpressions?: number
+  /** Latest follower total observed on linkedin.com/dashboard/. */
+  followers?: number
+  /** Latest search appearances observed on linkedin.com/dashboard/. */
+  searchAppearances?: number
 }
 
 export function summarizeStats(stats: DailyStats): DaySummary {
@@ -37,11 +43,13 @@ export function summarizeStats(stats: DailyStats): DaySummary {
     follows: c.follow ?? 0,
     ssi: stats.ssi?.total,
     profileViewers: stats.profileViews?.viewers,
+    postImpressions: stats.linkedInDashboard?.postImpressions,
+    followers: stats.linkedInDashboard?.followers,
+    searchAppearances: stats.linkedInDashboard?.searchAppearances,
   }
 }
 
 export type GoalKey =
-  | 'activeTime'
   | 'reaction'
   | 'comment'
   | 'connection_request'
@@ -60,7 +68,6 @@ export interface GoalRow {
 
 export function goalRows(summary: DaySummary, goals: DailyGoals): GoalRow[] {
   const base: Array<{ key: GoalKey; current: number; target: number }> = [
-    { key: 'activeTime', current: summary.activeMinutes, target: goals.activeMinutes },
     { key: 'reaction', current: summary.reactions, target: goals.reactions },
     { key: 'comment', current: summary.comments, target: goals.comments },
     { key: 'connection_request', current: summary.connectionRequests, target: goals.connectionRequests },

@@ -106,6 +106,7 @@ export type LinkedInPageType =
   | 'post'
   | 'ssi'
   | 'analytics'
+  | 'dashboard'
   | 'other'
 
 export interface ActivitySession {
@@ -146,8 +147,28 @@ export interface ProfileViewsEntry {
   source?: EventSource
 }
 
+/**
+ * A reading of linkedin.com/dashboard/. These are aggregate counters only; the
+ * extension never stores individual viewers, followers, searches, or posts.
+ */
+export interface LinkedInDashboardEntry {
+  timestamp: string
+  postImpressions?: number
+  postImpressionsRangeDays?: number
+  followers?: number
+  followersChangePercent?: number
+  profileViewers?: number
+  profileViewersRangeDays?: number
+  searchAppearances?: number
+  searchAppearancesPeriod?: string
+  searchAppearancesChangePercent?: number
+  weeklyPosts?: number
+  weeklyComments?: number
+  weeklyPeriod?: string
+  source?: EventSource
+}
+
 export interface DailyGoals {
-  activeMinutes: number
   reactions: number
   comments: number
   connectionRequests: number
@@ -164,6 +185,7 @@ export interface DailyStats {
   counters: Counters
   ssi?: SSIEntry
   profileViews?: ProfileViewsEntry
+  linkedInDashboard?: LinkedInDashboardEntry
   /** Snapshot of the goals that were active on this day (for accurate history). */
   goalsSnapshot?: DailyGoals
 }
@@ -178,6 +200,8 @@ export interface DayRecord {
   ssiEntries: SSIEntry[]
   /** Every profile-views observation made this day; stats.profileViews is the latest. */
   profileViewsEntries: ProfileViewsEntry[]
+  /** Every /dashboard/ observation made this day; stats.linkedInDashboard is the latest. */
+  linkedInDashboardEntries: LinkedInDashboardEntry[]
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +277,7 @@ export type DetectorKey =
   | 'navigation'
   | 'ssi'
   | 'profileViews'
+  | 'linkedInDashboard'
 
 export type DetectorStatus = 'working' | 'needs_verification' | 'unknown'
 

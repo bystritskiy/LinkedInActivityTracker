@@ -6,6 +6,7 @@ import type { ExportResult, SettingsPatch } from '../common/messages'
 import { goalRows, summarizeStats } from '../common/summary'
 import type {
   DailyGoals,
+  LinkedInDashboardEntry,
   Settings,
   StorageRoot,
   TrackedEvent,
@@ -175,9 +176,15 @@ function TodayTab(props: {
     <section>
       <h2>{t('dash.today.heading')}</h2>
       <div className="goal-grid">
+        <article className="metric">
+          <span>{t('events.activeTime')}</span>
+          <strong>
+            {props.summary.activeMinutes} {t('common.minutes')}
+          </strong>
+        </article>
         {rows.map((row) => (
           <article className="metric" key={row.key}>
-            <span>{row.key === 'activeTime' ? t('events.activeTime') : t(eventLabelKey(row.key))}</span>
+            <span>{t(eventLabelKey(row.key))}</span>
             <strong>
               {row.current} / {row.target}
             </strong>
@@ -335,6 +342,9 @@ function HistoryTab({ state }: { state: StorageRoot }) {
               <th>{t('events.post')}</th>
               <th>SSI</th>
               <th>{t('dash.history.profileViewers')}</th>
+              <th>{t('dash.history.postImpressions')}</th>
+              <th>{t('dash.history.followers')}</th>
+              <th>{t('dash.history.searchAppearances')}</th>
             </tr>
           </thead>
           <tbody>
@@ -352,6 +362,9 @@ function HistoryTab({ state }: { state: StorageRoot }) {
                   <td>{s.posts}</td>
                   <td>{s.ssi ?? '-'}</td>
                   <td>{s.profileViewers ?? '-'}</td>
+                  <td>{s.postImpressions ?? '-'}</td>
+                  <td>{s.followers ?? '-'}</td>
+                  <td>{s.searchAppearances ?? '-'}</td>
                 </tr>
               )
             })}
@@ -388,6 +401,16 @@ function SsiTab(props: {
         ? d.profileViewsEntries
         : d.stats.profileViews
           ? [d.stats.profileViews]
+          : [],
+    )
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+
+  const dashboardEntries = Object.values(props.state.days)
+    .flatMap((d) =>
+      d.linkedInDashboardEntries?.length
+        ? d.linkedInDashboardEntries
+        : d.stats.linkedInDashboard
+          ? [d.stats.linkedInDashboard]
           : [],
     )
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
@@ -497,7 +520,73 @@ function SsiTab(props: {
           </tbody>
         </table>
       )}
+
+      <h3>{t('dash.linkedinDashboard.heading')}</h3>
+      {dashboardEntries.length === 0 ? (
+        <p>{t('dash.linkedinDashboard.noData')}</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>{t('dash.ssi.date')}</th>
+              <th>{t('dash.linkedinDashboard.postImpressions')}</th>
+              <th>{t('dash.linkedinDashboard.postImpressionsRangeDays')}</th>
+              <th>{t('dash.linkedinDashboard.followers')}</th>
+              <th>{t('dash.linkedinDashboard.followersChangePercent')}</th>
+              <th>{t('dash.linkedinDashboard.profileViewers')}</th>
+              <th>{t('dash.linkedinDashboard.profileViewersRangeDays')}</th>
+              <th>{t('dash.linkedinDashboard.searchAppearances')}</th>
+              <th>{t('dash.linkedinDashboard.searchAppearancesPeriod')}</th>
+              <th>{t('dash.linkedinDashboard.searchAppearancesChangePercent')}</th>
+              <th>{t('dash.linkedinDashboard.weeklyPosts')}</th>
+              <th>{t('dash.linkedinDashboard.weeklyComments')}</th>
+              <th>{t('dash.linkedinDashboard.weeklyPeriod')}</th>
+              <th>{t('dash.ssi.source')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dashboardEntries.map((e, i) => (
+              <LinkedInDashboardRow
+                key={`${e.timestamp}-${i}`}
+                entry={e}
+                sourceLabel={e.source ? t(`dash.source.${e.source}`) : '-'}
+              />
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
+  )
+}
+
+function valueOrDash(value: number | string | undefined): number | string {
+  return value ?? '-'
+}
+
+function LinkedInDashboardRow({
+  entry,
+  sourceLabel,
+}: {
+  entry: LinkedInDashboardEntry
+  sourceLabel: string
+}) {
+  return (
+    <tr>
+      <td>{entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-'}</td>
+      <td>{valueOrDash(entry.postImpressions)}</td>
+      <td>{valueOrDash(entry.postImpressionsRangeDays)}</td>
+      <td>{valueOrDash(entry.followers)}</td>
+      <td>{valueOrDash(entry.followersChangePercent)}</td>
+      <td>{valueOrDash(entry.profileViewers)}</td>
+      <td>{valueOrDash(entry.profileViewersRangeDays)}</td>
+      <td>{valueOrDash(entry.searchAppearances)}</td>
+      <td>{valueOrDash(entry.searchAppearancesPeriod)}</td>
+      <td>{valueOrDash(entry.searchAppearancesChangePercent)}</td>
+      <td>{valueOrDash(entry.weeklyPosts)}</td>
+      <td>{valueOrDash(entry.weeklyComments)}</td>
+      <td>{valueOrDash(entry.weeklyPeriod)}</td>
+      <td>{sourceLabel}</td>
+    </tr>
   )
 }
 
@@ -518,11 +607,6 @@ function GoalsTab(props: {
     <section>
       <h2>{t('dash.goals.heading')}</h2>
       <div className="form-grid">
-        <NumberField
-          label={t('dash.goals.activeMinutes')}
-          value={String(goals.activeMinutes)}
-          onChange={(v) => update('activeMinutes', v)}
-        />
         <NumberField
           label={t('events.reaction')}
           value={String(goals.reactions)}

@@ -42,7 +42,7 @@ export const ru: Record<MessageKey, string> = {
 
   'nav.today': 'Сегодня',
   'nav.history': 'История',
-  'nav.ssi': 'SSI',
+  'nav.ssi': 'Аналитика',
   'nav.goals': 'Цели',
   'nav.privacy': 'Приватность',
   'nav.diagnostics': 'Диагностика',
@@ -64,6 +64,9 @@ export const ru: Record<MessageKey, string> = {
   'dash.history.time': 'Время',
   'dash.history.empty': 'Истории пока нет.',
   'dash.history.profileViewers': 'Просмотры',
+  'dash.history.postImpressions': 'Показы',
+  'dash.history.followers': 'Подписчики',
+  'dash.history.searchAppearances': 'Поиск',
 
   'dash.ssi.heading': 'Social Selling Index',
   'dash.ssi.total': 'Общий SSI',
@@ -86,16 +89,31 @@ export const ru: Record<MessageKey, string> = {
   'dash.views.noData':
     'Записей пока нет. Откройте «Кто просматривал ваш профиль» в LinkedIn, чтобы записать сегодняшнее значение.',
 
+  'dash.linkedinDashboard.heading': 'LinkedIn dashboard',
+  'dash.linkedinDashboard.postImpressions': 'Показы постов',
+  'dash.linkedinDashboard.postImpressionsRangeDays': 'Период показов (дней)',
+  'dash.linkedinDashboard.followers': 'Всего подписчиков',
+  'dash.linkedinDashboard.followersChangePercent': 'Изменение подписчиков (%)',
+  'dash.linkedinDashboard.profileViewers': 'Просмотры профиля',
+  'dash.linkedinDashboard.profileViewersRangeDays': 'Период просмотров (дней)',
+  'dash.linkedinDashboard.searchAppearances': 'Появления в поиске',
+  'dash.linkedinDashboard.searchAppearancesPeriod': 'Период поиска',
+  'dash.linkedinDashboard.searchAppearancesChangePercent': 'Изменение поиска (%)',
+  'dash.linkedinDashboard.weeklyPosts': 'Посты за неделю',
+  'dash.linkedinDashboard.weeklyComments': 'Комментарии за неделю',
+  'dash.linkedinDashboard.weeklyPeriod': 'Недельный период',
+  'dash.linkedinDashboard.noData':
+    'Записей пока нет. Откройте linkedin.com/dashboard/, чтобы записать агрегированные метрики dashboard.',
+
   'dash.goals.heading': 'Дневные цели',
   'dash.goals.saved': 'Цели сохранены.',
-  'dash.goals.activeMinutes': 'Активные минуты',
 
   'dash.privacy.heading': 'Приватность',
   'dash.privacy.notice':
     'Расширение никогда не выполняет действия в LinkedIn вместо вас. Оно только фиксирует действия, которые вы вручную совершили в браузере. Все данные об активности хранятся локально на вашем устройстве.',
   'dash.privacy.whatStored': 'Что хранится',
   'dash.privacy.whatStoredBody':
-    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI и суммарное число просмотров профиля (считанные со страниц SSI и аналитики при их открытии или введённые вручную).',
+    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI, суммарное число просмотров профиля и агрегированные метрики dashboard (считанные со страниц SSI / аналитики / dashboard при их открытии или введённые вручную там, где это поддержано).',
   'dash.privacy.whatNotStored': 'Что никогда не хранится',
   'dash.privacy.whatNotStoredBody':
     'Не хранятся тексты сообщений, комментариев и постов. Нет имён, email, фотографий и содержимого профилей. Нет cookies, токенов и сетевых ответов.',
@@ -136,4 +154,5 @@ export const ru: Record<MessageKey, string> = {
 
   'toast.ssiRecorded': 'SSI записан: {total}',
   'toast.profileViewsRecorded': 'Просмотры профиля записаны: {viewers}',
+  'toast.linkedInDashboardRecorded': 'LinkedIn dashboard записан',
 }

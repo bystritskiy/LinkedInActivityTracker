@@ -2,6 +2,7 @@ import type { ImportResult } from '../common/messages'
 import type {
   ActivitySession,
   DayRecord,
+  LinkedInDashboardEntry,
   ProfileViewsEntry,
   SSIEntry,
   StorageRoot,
@@ -83,6 +84,43 @@ function sanitizeProfileViews(raw: unknown): ProfileViewsEntry | undefined {
   }
 }
 
+function sanitizeLinkedInDashboard(raw: unknown): LinkedInDashboardEntry | undefined {
+  if (!isObject(raw)) return undefined
+  const hasValue = [
+    raw.postImpressions,
+    raw.followers,
+    raw.profileViewers,
+    raw.searchAppearances,
+    raw.weeklyPosts,
+    raw.weeklyComments,
+  ].some((v) => typeof v === 'number')
+  if (!hasValue) return undefined
+  return {
+    timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : '',
+    postImpressions: typeof raw.postImpressions === 'number' ? raw.postImpressions : undefined,
+    postImpressionsRangeDays:
+      typeof raw.postImpressionsRangeDays === 'number' ? raw.postImpressionsRangeDays : undefined,
+    followers: typeof raw.followers === 'number' ? raw.followers : undefined,
+    followersChangePercent:
+      typeof raw.followersChangePercent === 'number' ? raw.followersChangePercent : undefined,
+    profileViewers: typeof raw.profileViewers === 'number' ? raw.profileViewers : undefined,
+    profileViewersRangeDays:
+      typeof raw.profileViewersRangeDays === 'number' ? raw.profileViewersRangeDays : undefined,
+    searchAppearances:
+      typeof raw.searchAppearances === 'number' ? raw.searchAppearances : undefined,
+    searchAppearancesPeriod:
+      typeof raw.searchAppearancesPeriod === 'string' ? raw.searchAppearancesPeriod : undefined,
+    searchAppearancesChangePercent:
+      typeof raw.searchAppearancesChangePercent === 'number'
+        ? raw.searchAppearancesChangePercent
+        : undefined,
+    weeklyPosts: typeof raw.weeklyPosts === 'number' ? raw.weeklyPosts : undefined,
+    weeklyComments: typeof raw.weeklyComments === 'number' ? raw.weeklyComments : undefined,
+    weeklyPeriod: typeof raw.weeklyPeriod === 'string' ? raw.weeklyPeriod : undefined,
+    source: raw.source === 'manual' ? 'manual' : raw.source === 'automatic' ? 'automatic' : undefined,
+  }
+}
+
 function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
   if (!isObject(raw)) return null
   const eventsRaw = Array.isArray(raw.events) ? raw.events : []
@@ -99,6 +137,12 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
   const profileViewsEntries = profileViewsRaw
     .map(sanitizeProfileViews)
     .filter((s): s is ProfileViewsEntry => s !== undefined)
+  const linkedInDashboardRaw = Array.isArray(raw.linkedInDashboardEntries)
+    ? raw.linkedInDashboardEntries
+    : []
+  const linkedInDashboardEntries = linkedInDashboardRaw
+    .map(sanitizeLinkedInDashboard)
+    .filter((s): s is LinkedInDashboardEntry => s !== undefined)
   const day: DayRecord = {
     dayKey,
     events,
@@ -107,6 +151,7 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
       .filter((s): s is ActivitySession => s !== null),
     ssiEntries,
     profileViewsEntries,
+    linkedInDashboardEntries,
     stats: {
       dayKey,
       activeSeconds: typeof statsRaw.activeSeconds === 'number' ? statsRaw.activeSeconds : 0,
@@ -115,6 +160,9 @@ function sanitizeDay(dayKey: string, raw: unknown): DayRecord | null {
       profileViews:
         sanitizeProfileViews(statsRaw.profileViews) ??
         profileViewsEntries[profileViewsEntries.length - 1],
+      linkedInDashboard:
+        sanitizeLinkedInDashboard(statsRaw.linkedInDashboard) ??
+        linkedInDashboardEntries[linkedInDashboardEntries.length - 1],
     },
   }
   // Rebuild counters from the (validated) events so a tampered/corrupt counter

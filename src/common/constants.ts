@@ -9,13 +9,12 @@ import type {
 } from './types'
 
 /** Bump this when the persisted schema changes and add a migration. */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Single chrome.storage.local key holding the entire StorageRoot. */
 export const STORAGE_KEY = 'lat:root'
 
 export const DEFAULT_GOALS: DailyGoals = {
-  activeMinutes: 25,
   reactions: 5,
   comments: 2,
   connectionRequests: 5,

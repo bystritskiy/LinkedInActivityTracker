@@ -40,7 +40,7 @@ export const en = {
 
   'nav.today': 'Today',
   'nav.history': 'History',
-  'nav.ssi': 'SSI',
+  'nav.ssi': 'Analytics',
   'nav.goals': 'Goals',
   'nav.privacy': 'Privacy',
   'nav.diagnostics': 'Diagnostics',
@@ -62,6 +62,9 @@ export const en = {
   'dash.history.time': 'Time',
   'dash.history.empty': 'No history yet.',
   'dash.history.profileViewers': 'Viewers',
+  'dash.history.postImpressions': 'Impressions',
+  'dash.history.followers': 'Followers',
+  'dash.history.searchAppearances': 'Search',
 
   'dash.ssi.heading': 'Social Selling Index',
   'dash.ssi.total': 'Total SSI',
@@ -83,16 +86,31 @@ export const en = {
   'dash.views.noData':
     'No entries yet. Open “Who’s viewed your profile” on LinkedIn to record today’s count.',
 
+  'dash.linkedinDashboard.heading': 'LinkedIn dashboard',
+  'dash.linkedinDashboard.postImpressions': 'Post impressions',
+  'dash.linkedinDashboard.postImpressionsRangeDays': 'Impression period (days)',
+  'dash.linkedinDashboard.followers': 'Total followers',
+  'dash.linkedinDashboard.followersChangePercent': 'Follower change (%)',
+  'dash.linkedinDashboard.profileViewers': 'Profile viewers',
+  'dash.linkedinDashboard.profileViewersRangeDays': 'Viewer period (days)',
+  'dash.linkedinDashboard.searchAppearances': 'Search appearances',
+  'dash.linkedinDashboard.searchAppearancesPeriod': 'Search period',
+  'dash.linkedinDashboard.searchAppearancesChangePercent': 'Search change (%)',
+  'dash.linkedinDashboard.weeklyPosts': 'Weekly posts',
+  'dash.linkedinDashboard.weeklyComments': 'Weekly comments',
+  'dash.linkedinDashboard.weeklyPeriod': 'Weekly period',
+  'dash.linkedinDashboard.noData':
+    'No entries yet. Open linkedin.com/dashboard/ to record aggregate dashboard metrics.',
+
   'dash.goals.heading': 'Daily goals',
   'dash.goals.saved': 'Goals saved.',
-  'dash.goals.activeMinutes': 'Active minutes',
 
   'dash.privacy.heading': 'Privacy',
   'dash.privacy.notice':
     'This extension never performs actions on LinkedIn. It only records actions that you manually complete in your browser. All activity data is stored locally on your device.',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
-    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, and the aggregate profile-viewer count (read from the SSI / analytics pages when you open them, or entered by hand).',
+    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, aggregate profile-viewer counts, and aggregate dashboard metrics (read from the SSI / analytics / dashboard pages when you open them, or entered by hand where supported).',
   'dash.privacy.whatNotStored': 'What is never stored',
   'dash.privacy.whatNotStoredBody':
     'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
@@ -133,6 +151,7 @@ export const en = {
 
   'toast.ssiRecorded': 'SSI recorded: {total}',
   'toast.profileViewsRecorded': 'Profile viewers recorded: {viewers}',
+  'toast.linkedInDashboardRecorded': 'LinkedIn dashboard recorded',
 } as const
 
 export type MessageKey = keyof typeof en

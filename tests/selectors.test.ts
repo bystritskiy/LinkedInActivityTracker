@@ -3,6 +3,7 @@ import {
   COMMENT_ITEM_SELECTOR,
   classifyReaction,
   closestPostContainer,
+  extractLinkedInDashboard,
   extractProfileViews,
   extractSSI,
   connectBecamePending,
@@ -11,6 +12,8 @@ import {
   isCommentSubmitButton,
   isConnectButton,
   isMessageSendButton,
+  isPostPublishControl,
+  isPostShareButton,
   isReactionActive,
   isReplyContext,
   isSendInvitationButton,
@@ -277,6 +280,26 @@ describe('repostMenuSelection (2026 dropdown markup)', () => {
   })
 })
 
+describe('post share composer selectors', () => {
+  it('matches the publish button inside an aria-modal share composer', () => {
+    const host = build(`
+      <div aria-modal="true" class="artdeco-modal">
+        <button id="publish">Post</button>
+      </div>
+    `)
+    const btn = host.querySelector<HTMLElement>('#publish')!
+    expect(isPostPublishControl(btn)).toBe(true)
+    expect(isPostShareButton(btn)).toBe(true)
+  })
+
+  it('rejects post-worded controls outside a composer', () => {
+    const host = build(`<button id="publish">Post</button>`)
+    const btn = host.querySelector<HTMLElement>('#publish')!
+    expect(isPostPublishControl(btn)).toBe(true)
+    expect(isPostShareButton(btn)).toBe(false)
+  })
+})
+
 describe('connect request selectors', () => {
   it('isConnectButton matches the bare Connect button and the invite aria-label', () => {
     const host = build(
@@ -522,6 +545,50 @@ describe('extractProfileViews', () => {
         build(`<p>Unlock your profile views and jobs where you’d be a top applicant</p>`),
       ),
     ).toBeNull()
+  })
+})
+
+// LinkedIn dashboard structure captured 2026-07-04 from linkedin.com/dashboard/:
+// "Track performance" cards render a leading value plus a short caption; the
+// value and caption can be sibling elements whose textContent abuts.
+describe('extractLinkedInDashboard', () => {
+  it('parses track-performance cards and weekly progress from the dashboard', () => {
+    const host = build(
+      `<main>
+         <h1>Overview</h1>
+         <section>
+           <h2>Track performance</h2>
+           <div><p>26</p><p>Post impressions in 7 days</p></div>
+           <div><p>2,018</p><p>Total followers</p><p>+2% vs. prior 7 days</p></div>
+           <div><p>54</p><p>Profile viewers in 90 days</p></div>
+           <div><p>3</p><p>Search appearances Jun 23–29</p><p>0% vs. Jun 16–22</p></div>
+         </section>
+         <section>
+           <h2>Weekly progress</h2>
+           <p>Jun 28–Jul 4</p>
+           <div><p>1 post</p><p>Members who post once per week on average see up to 4x more profile views.</p></div>
+           <div><p>10 comments</p><p>Members who comment once per week on average see up to 3x more profile views.</p></div>
+         </section>
+       </main>`,
+    )
+    expect(extractLinkedInDashboard(host)).toEqual({
+      postImpressions: 26,
+      postImpressionsRangeDays: 7,
+      followers: 2018,
+      followersChangePercent: 2,
+      profileViewers: 54,
+      profileViewersRangeDays: 90,
+      searchAppearances: 3,
+      searchAppearancesPeriod: 'jun 23–29',
+      searchAppearancesChangePercent: 0,
+      weeklyPosts: 1,
+      weeklyComments: 10,
+      weeklyPeriod: 'jun 28–jul 4',
+    })
+  })
+
+  it('returns null while dashboard metrics have not rendered yet', () => {
+    expect(extractLinkedInDashboard(build(`<main><h1>Overview</h1></main>`))).toBeNull()
   })
 })
 

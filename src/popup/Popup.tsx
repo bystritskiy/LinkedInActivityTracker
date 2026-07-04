@@ -84,7 +84,7 @@ export function Popup() {
         {vm.rows.map((row) => (
           <div className="progress-row" key={row.key}>
             <div className="progress-label">
-              <span>{row.key === 'activeTime' ? vm.t('events.activeTime') : vm.t(eventLabelKey(row.key))}</span>
+              <span>{vm.t(eventLabelKey(row.key))}</span>
               <strong>
                 {row.current} / {row.target}
               </strong>
@@ -95,6 +95,13 @@ export function Popup() {
           </div>
         ))}
       </section>
+
+      <div className="quick-stats">
+        <span>{vm.t('events.activeTime')}</span>
+        <strong>
+          {vm.summary.activeMinutes} {vm.t('common.minutes')}
+        </strong>
+      </div>
 
       <div className="quick-stats">
         <span>SSI</span>

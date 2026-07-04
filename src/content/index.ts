@@ -18,6 +18,7 @@ import { MessageDetector } from './detectors/message'
 import { PostDetector } from './detectors/post'
 import { SSIDetector } from './detectors/ssi'
 import { ProfileViewsDetector } from './detectors/profile-views'
+import { LinkedInDashboardDetector } from './detectors/linkedin-dashboard'
 import { trace } from './messaging'
 
 async function boot(): Promise<void> {
@@ -35,6 +36,7 @@ async function boot(): Promise<void> {
     .register(new PostDetector())
     .register(new SSIDetector())
     .register(new ProfileViewsDetector())
+    .register(new LinkedInDashboardDetector())
     .start()
 
   console.debug('[LAT] content tracking started')

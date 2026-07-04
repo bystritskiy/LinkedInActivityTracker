@@ -6,6 +6,7 @@ import {
   manualAdjust,
   recordEvent,
   removeReactionByDedupKey,
+  setLinkedInDashboard,
   setProfileViews,
   setSSI,
 } from '../src/background/reducer'
@@ -118,5 +119,32 @@ describe('reducer', () => {
     expect(day.profileViewsEntries[0].viewers).toBe(51)
     expect(day.stats.profileViews?.viewers).toBe(54)
     expect(day.stats.profileViews?.rangeDays).toBe(90)
+  })
+
+  it('keeps a per-day history of LinkedIn dashboard observations with the latest as the summary', () => {
+    const state = root()
+    setLinkedInDashboard(state, '2026-07-04', {
+      timestamp: '2026-07-04T09:00:00.000Z',
+      postImpressions: 20,
+      followers: 2016,
+      source: 'automatic',
+    })
+    setLinkedInDashboard(state, '2026-07-04', {
+      timestamp: '2026-07-04T18:00:00.000Z',
+      postImpressions: 26,
+      postImpressionsRangeDays: 7,
+      followers: 2018,
+      profileViewers: 54,
+      searchAppearances: 3,
+      weeklyPosts: 1,
+      weeklyComments: 10,
+      source: 'automatic',
+    })
+
+    const day = state.days['2026-07-04']
+    expect(day.linkedInDashboardEntries).toHaveLength(2)
+    expect(day.linkedInDashboardEntries[0].followers).toBe(2016)
+    expect(day.stats.linkedInDashboard?.postImpressions).toBe(26)
+    expect(day.stats.linkedInDashboard?.weeklyComments).toBe(10)
   })
 })

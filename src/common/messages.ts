@@ -13,6 +13,7 @@ import type {
   DetectorStatus,
   IdleThresholdSeconds,
   LinkedInPageType,
+  LinkedInDashboardEntry,
   LocaleCode,
   NotificationSettings,
   PrivacySettings,
@@ -53,6 +54,7 @@ export type ContentMessage =
   | { kind: 'activeTick'; seconds: number; pageType: LinkedInPageType }
   | { kind: 'ssiSnapshot'; dayKey: string; ssi: SSIEntry }
   | { kind: 'profileViewsSnapshot'; dayKey: string; entry: ProfileViewsEntry }
+  | { kind: 'linkedInDashboardSnapshot'; dayKey: string; entry: LinkedInDashboardEntry }
   | {
       kind: 'diagnostic'
       level: DiagnosticLevel

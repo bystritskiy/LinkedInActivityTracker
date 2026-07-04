@@ -614,13 +614,32 @@ export function isMessageSendButton(btn: HTMLElement, onMessagingPage = false): 
 // ---------------------------------------------------------------------------
 
 const POST_WORDS = ['post', 'опубликовать', 'опубл', 'publikuj', 'udostępnij'] as const
+const SHARE_COMPOSER_SELECTOR = [
+  '[class*="share-box"]',
+  '[class*="share-creation"]',
+  '[class*="share-creator"]',
+  '[class*="share-dialog"]',
+  '[role="dialog"]',
+  '[aria-modal="true"]',
+  '[data-test-modal]',
+  '[class*="artdeco-modal"]',
+].join(', ')
 
-export function isPostShareButton(btn: HTMLElement): boolean {
+export function isPostPublishControl(btn: HTMLElement): boolean {
   const control = norm(btn.getAttribute('data-control-name'))
   if (control.includes('share') && containsAny(control, ['actor', 'post'])) return true
-  const inComposer = btn.closest('[class*="share-box"], [class*="share-creation"], [role="dialog"]')
-  if (!inComposer) return false
   return containsAny(controlText(btn), POST_WORDS)
+}
+
+export function closestShareComposer(el: Element): Element | null {
+  return el.closest(SHARE_COMPOSER_SELECTOR)
+}
+
+export function isPostShareButton(btn: HTMLElement): boolean {
+  if (!isPostPublishControl(btn)) return false
+  const inComposer = closestShareComposer(btn)
+  if (!inComposer) return false
+  return true
 }
 
 // ---------------------------------------------------------------------------
@@ -788,6 +807,151 @@ export function extractProfileViews(root: ParentNode = document): ProfileViewsSn
     }
   }
   return best?.snapshot ?? null
+}
+
+// ---------------------------------------------------------------------------
+// LinkedIn creator dashboard — /dashboard/
+// ---------------------------------------------------------------------------
+
+export interface LinkedInDashboardSnapshot {
+  postImpressions?: number
+  postImpressionsRangeDays?: number
+  followers?: number
+  followersChangePercent?: number
+  profileViewers?: number
+  profileViewersRangeDays?: number
+  searchAppearances?: number
+  searchAppearancesPeriod?: string
+  searchAppearancesChangePercent?: number
+  weeklyPosts?: number
+  weeklyComments?: number
+  weeklyPeriod?: string
+}
+
+type DashboardMetricMatch = { el: Element; text: string; value: number }
+
+const LEADING_INTEGER_RE = /^(\d{1,3}(?:[\s ,.]\d{3})*|\d+)/
+const PERCENT_RE = /([+-]?\d{1,3}(?:[.,]\d+)?)\s*%/
+const DASHBOARD_RANGE_DAYS_RE = /(?:in|past|последн|ciągu)\s*(?:the\s*)?(?:past\s*)?(\d{1,3})\s*(?:day|дн|dni)/
+const WEEKLY_PERIOD_RE =
+  /weekly progress\s*([a-zа-я]{3,}\s+\d{1,2}\s*[–-]\s*(?:[a-zа-я]{3,}\s*)?\d{1,2})/
+
+function parseLeadingInteger(raw: string): number | undefined {
+  const match = raw.match(LEADING_INTEGER_RE)
+  if (!match) return undefined
+  const value = Number.parseInt(match[1].replace(/\D/g, ''), 10)
+  return Number.isFinite(value) ? value : undefined
+}
+
+function parsePercent(raw: string): number | undefined {
+  const match = raw.match(PERCENT_RE)
+  if (!match) return undefined
+  const value = Number.parseFloat(match[1].replace(',', '.'))
+  return Number.isFinite(value) ? value : undefined
+}
+
+function bestDashboardMetric(
+  root: ParentNode,
+  predicate: (text: string) => boolean,
+): DashboardMetricMatch | null {
+  let best: DashboardMetricMatch | null = null
+  for (const el of root.querySelectorAll('*')) {
+    const text = compactText(el)
+    if (!text || text.length > 220 || !predicate(text)) continue
+    const value = parseLeadingInteger(text)
+    if (value === undefined) continue
+    if (!best || text.length < best.text.length) best = { el, text, value }
+  }
+  return best
+}
+
+function compactDescendantTexts(el: Element): string[] {
+  const lines: string[] = []
+  for (const child of el.querySelectorAll('*')) {
+    const text = compactText(child)
+    if (!text || text.length > 90 || lines.includes(text)) continue
+    lines.push(text)
+  }
+  return lines
+}
+
+function dashboardRangeDays(text: string): number | undefined {
+  const match = text.match(DASHBOARD_RANGE_DAYS_RE)
+  return match ? Number(match[1]) : undefined
+}
+
+function dashboardSearchPeriod(match: DashboardMetricMatch | null): string | undefined {
+  if (!match) return undefined
+  const line =
+    compactDescendantTexts(match.el).find((text) => text.includes('search appearances')) ??
+    match.text
+  const period = line
+    .replace(/^\d[\d\s ,.]*/, '')
+    .replace('search appearances', '')
+    .replace(PERCENT_RE, '')
+    .replace(/\bvs\..*$/, '')
+    .trim()
+  return period || undefined
+}
+
+function dashboardChangePercent(match: DashboardMetricMatch | null): number | undefined {
+  if (!match) return undefined
+  const line = compactDescendantTexts(match.el).find((text) => text.includes('%'))
+  return parsePercent(line ?? match.text)
+}
+
+function dashboardWeeklyPeriod(root: ParentNode): string | undefined {
+  for (const el of root.querySelectorAll('*')) {
+    const text = compactText(el)
+    if (!text || text.length > 260 || !text.includes('weekly progress')) continue
+    const match = text.match(WEEKLY_PERIOD_RE)
+    if (match) return match[1]
+  }
+  return undefined
+}
+
+/**
+ * Read aggregate metrics from linkedin.com/dashboard/. Purely observational.
+ * Captures the top "Track performance" cards plus the weekly post/comment
+ * progress cards when they are present.
+ */
+export function extractLinkedInDashboard(
+  root: ParentNode = document,
+): LinkedInDashboardSnapshot | null {
+  const postImpressions = bestDashboardMetric(
+    root,
+    (text) => text.includes('post impression'),
+  )
+  const followers = bestDashboardMetric(root, (text) => text.includes('total followers'))
+  const profileViewers = bestDashboardMetric(
+    root,
+    (text) => text.includes('profile') && text.includes('viewer'),
+  )
+  const searchAppearances = bestDashboardMetric(root, (text) =>
+    text.includes('search appearances'),
+  )
+  const weeklyPosts = bestDashboardMetric(root, (text) => text.includes('members who post'))
+  const weeklyComments = bestDashboardMetric(root, (text) =>
+    text.includes('members who comment'),
+  )
+
+  const snapshot: LinkedInDashboardSnapshot = {
+    postImpressions: postImpressions?.value,
+    postImpressionsRangeDays: postImpressions
+      ? dashboardRangeDays(postImpressions.text)
+      : undefined,
+    followers: followers?.value,
+    followersChangePercent: dashboardChangePercent(followers),
+    profileViewers: profileViewers?.value,
+    profileViewersRangeDays: profileViewers ? dashboardRangeDays(profileViewers.text) : undefined,
+    searchAppearances: searchAppearances?.value,
+    searchAppearancesPeriod: dashboardSearchPeriod(searchAppearances),
+    searchAppearancesChangePercent: dashboardChangePercent(searchAppearances),
+    weeklyPosts: weeklyPosts?.value,
+    weeklyComments: weeklyComments?.value,
+    weeklyPeriod: dashboardWeeklyPeriod(root),
+  }
+  return Object.values(snapshot).some((v) => v !== undefined) ? snapshot : null
 }
 
 // ---------------------------------------------------------------------------

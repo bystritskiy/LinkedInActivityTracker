@@ -40,6 +40,9 @@ function buildMarkdown(root: StorageRoot, dayKey: string): string {
     `- Posts: ${s.posts}`,
     `- SSI: ${s.ssi ?? '—'}`,
     `- Profile viewers: ${s.profileViewers ?? '—'}`,
+    `- Post impressions: ${s.postImpressions ?? '—'}`,
+    `- Followers: ${s.followers ?? '—'}`,
+    `- Search appearances: ${s.searchAppearances ?? '—'}`,
     '',
     '## Notes',
     '',
@@ -71,6 +74,18 @@ function buildCsv(root: StorageRoot): string {
     'SSIBuildRelationships',
     'ProfileViewers',
     'ProfileViewersRangeDays',
+    'PostImpressions',
+    'PostImpressionsRangeDays',
+    'Followers',
+    'FollowersChangePercent',
+    'DashboardProfileViewers',
+    'DashboardProfileViewersRangeDays',
+    'SearchAppearances',
+    'SearchAppearancesPeriod',
+    'SearchAppearancesChangePercent',
+    'WeeklyPosts',
+    'WeeklyComments',
+    'WeeklyPeriod',
   ]
   const rows = Object.keys(root.days)
     .sort()
@@ -78,6 +93,7 @@ function buildCsv(root: StorageRoot): string {
       const day = root.days[k]
       const s = summarizeStats(day.stats)
       const ssi = day.stats.ssi
+      const dashboard = day.stats.linkedInDashboard
       return [
         s.dayKey,
         s.activeMinutes,
@@ -94,6 +110,18 @@ function buildCsv(root: StorageRoot): string {
         ssi?.buildRelationships,
         s.profileViewers,
         day.stats.profileViews?.rangeDays,
+        dashboard?.postImpressions,
+        dashboard?.postImpressionsRangeDays,
+        dashboard?.followers,
+        dashboard?.followersChangePercent,
+        dashboard?.profileViewers,
+        dashboard?.profileViewersRangeDays,
+        dashboard?.searchAppearances,
+        dashboard?.searchAppearancesPeriod,
+        dashboard?.searchAppearancesChangePercent,
+        dashboard?.weeklyPosts,
+        dashboard?.weeklyComments,
+        dashboard?.weeklyPeriod,
       ]
         .map(csvField)
         .join(',')
