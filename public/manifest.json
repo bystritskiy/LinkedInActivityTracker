@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "LinkedIn Activity Tracker",
   "version": "1.0.0",
-  "description": "Locally and passively logs your own LinkedIn activity for a daily challenge. Never performs actions for you. All data stays on your device.",
+  "description": "Passively logs your own LinkedIn activity for a daily challenge. Never acts for you. All data stays on your device.",
   "default_locale": "en",
   "icons": {
     "16": "icons/icon16.png",

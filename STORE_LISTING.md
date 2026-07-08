@@ -59,16 +59,18 @@ FEATURES
 • Privacy toggles for optional metadata
 • Export your data as JSON, CSV, or Markdown
 • Diagnostics that flag when LinkedIn changes its markup
-• English and Russian UI
 
 Not affiliated with LinkedIn. LinkedIn is a trademark of its respective owner.
 ```
 
-### Homepage / support URL
-https://github.com/bystritskiy/LinkedInActivityTracker
+### Homepage URL
+https://bystritskiy.github.io/LinkedInActivityTracker/
+
+### Support URL
+https://github.com/bystritskiy/LinkedInActivityTracker/issues
 
 ### Privacy policy URL
-https://bystritskiy.github.io/LinkedInActivityTracker/
+https://bystritskiy.github.io/LinkedInActivityTracker/privacy.html
 
 ---
 

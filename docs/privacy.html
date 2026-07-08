@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — LinkedIn Activity Tracker</title>
+  <style>
+    :root {
+      --bg: #ffffff; --fg: #1a1a1a; --muted: #555; --card: #f6f7f9;
+      --border: #e2e4e8; --accent: #0a66c2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14161a; --fg: #e8eaed; --muted: #9aa0a6;
+        --card: #1e2127; --border: #2c2f36; --accent: #4f9cf0;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 24px 96px; }
+    .home { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 28px; }
+    .home:hover { color: var(--accent); }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
+    h2 { font-size: 1.25rem; margin: 40px 0 12px; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+    p, li { color: var(--fg); }
+    ul { padding-left: 1.25rem; }
+    li { margin: 6px 0; }
+    a { color: var(--accent); }
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 20px; margin: 20px 0;
+    }
+    .tldr { font-weight: 600; }
+    code { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
+    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+<main>
+  <a class="home" href="./">← LinkedIn Activity Tracker</a>
+  <h1>Privacy Policy</h1>
+  <p class="meta">Last updated: July 8, 2026</p>
+
+  <div class="card">
+    <p class="tldr">In one sentence: this extension stores a count of your own LinkedIn
+    activity on your own device and sends nothing anywhere. There is no server, no account,
+    and no analytics upload.</p>
+  </div>
+
+  <h2>Who this covers</h2>
+  <p>LinkedIn Activity Tracker (“the extension”) is a Chrome extension that passively logs
+  your own activity on LinkedIn for a personal daily challenge. This policy explains what
+  data the extension handles and how.</p>
+
+  <h2>What the extension records</h2>
+  <p>When you use LinkedIn yourself, the extension records counts and timestamps of actions
+  you personally perform:</p>
+  <ul>
+    <li>Reactions, comments and replies, reposts, and posts you create</li>
+    <li>Connection requests and messages you send</li>
+    <li>Active time you spend on LinkedIn</li>
+  </ul>
+  <p>When you open LinkedIn’s own analytics pages, the extension may record aggregate numbers
+  shown on those pages:</p>
+  <ul>
+    <li>Social Selling Index (SSI)</li>
+    <li>Profile-viewer counts</li>
+    <li>Dashboard metrics: post impressions, total followers, profile viewers, search
+    appearances, weekly posts, weekly comments</li>
+  </ul>
+
+  <h2>What the extension never records</h2>
+  <ul>
+    <li>The text of your messages, comments, or posts</li>
+    <li>Cookies, tokens, passwords, emails, or photos</li>
+    <li>Other people’s profiles, individual profile viewers, or private content</li>
+    <li>Your browsing on any site other than LinkedIn</li>
+  </ul>
+
+  <h2>Where your data is stored</h2>
+  <p>All data is stored <strong>locally in your browser</strong> using
+  <code>chrome.storage.local</code>. It never leaves your device. There is:</p>
+  <ul>
+    <li>No backend server and no account</li>
+    <li>No cloud sync</li>
+    <li>No analytics or telemetry upload of your activity data</li>
+    <li>No sharing or selling of data to third parties</li>
+  </ul>
+
+  <h2>Optional metadata (off by default)</h2>
+  <p>Some optional, more detailed metadata (such as comment length or the profile URL of a
+  connection request) is <strong>only</strong> recorded if you explicitly opt in via the
+  extension’s privacy settings. It remains local like everything else. Any stored URL is
+  reduced to its origin and path (query strings and fragments are removed) before it is saved.</p>
+
+  <h2>Permissions the extension requests</h2>
+  <ul>
+    <li><code>storage</code> — to save your activity data locally on your device.</li>
+    <li><code>idle</code> — to measure active time on LinkedIn accurately by detecting when
+    you step away.</li>
+    <li>Access to <code>https://www.linkedin.com/*</code> — the extension only runs on
+    LinkedIn, where it observes your own activity. It does not run on any other website.</li>
+  </ul>
+  <p>The extension only <em>observes</em> LinkedIn. It never clicks, types, scrolls, submits
+  forms, sends messages, or performs any action on your behalf.</p>
+
+  <h2>Controlling and deleting your data</h2>
+  <ul>
+    <li>You can export all of your local data as JSON, CSV, or Markdown at any time from the
+    dashboard.</li>
+    <li>You can pause tracking or clear your data from the extension.</li>
+    <li>Removing the extension from Chrome deletes all of its local data.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>The extension is not directed to children under 13 and does not knowingly collect data
+  from them.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the “Last updated” date above will be revised and the new version
+  will be published at this URL.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about privacy: <a href="mailto:q80061@gmail.com">q80061@gmail.com</a>.
+  Source code: <a href="https://github.com/bystritskiy/LinkedInActivityTracker">github.com/bystritskiy/LinkedInActivityTracker</a>.</p>
+
+  <footer>
+    LinkedIn Activity Tracker is not affiliated with LinkedIn. LinkedIn is a trademark of its
+    respective owner.
+  </footer>
+</main>
+</body>
+</html>

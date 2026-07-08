@@ -3,132 +3,286 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Privacy Policy — LinkedIn Activity Tracker</title>
+  <title>LinkedIn Activity Tracker — your LinkedIn effort, tracked privately</title>
+  <meta name="description" content="A privacy-first Chrome extension that passively logs your own LinkedIn activity for a daily challenge. All data stays on your device." />
   <style>
     :root {
-      --bg: #ffffff; --fg: #1a1a1a; --muted: #555; --card: #f6f7f9;
-      --border: #e2e4e8; --accent: #0a66c2;
+      --bg: #ffffff; --fg: #10151b; --muted: #5b6672;
+      --card: #f7f9fb; --border: #e4e8ed;
+      --accent: #0a66c2; --accent-ink: #ffffff;
+      --band: #f0f5fb; --shadow: 0 20px 50px rgba(10,40,80,0.14);
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #14161a; --fg: #e8eaed; --muted: #9aa0a6;
-        --card: #1e2127; --border: #2c2f36; --accent: #4f9cf0;
+        --bg: #0d1014; --fg: #e9edf1; --muted: #98a2ad;
+        --card: #161b22; --border: #262d36;
+        --accent: #4f9cf0; --accent-ink: #06131f;
+        --band: #121821; --shadow: 0 20px 50px rgba(0,0,0,0.5);
       }
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0; background: var(--bg); color: var(--fg);
-      font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
-    main { max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
-    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 8px; }
-    h2 { font-size: 1.25rem; margin: 40px 0 12px; }
-    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
-    p, li { color: var(--fg); }
-    ul { padding-left: 1.25rem; }
-    li { margin: 6px 0; }
-    a { color: var(--accent); }
-    .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px 20px; margin: 20px 0;
+    a { color: var(--accent); text-decoration: none; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    img { max-width: 100%; height: auto; display: block; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: saturate(160%) blur(10px);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      border-bottom: 1px solid var(--border);
     }
-    .tldr { font-weight: 600; }
-    code { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
-    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
+    .nav-inner { display: flex; align-items: center; gap: 20px; height: 62px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--fg); }
+    .brand img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-links { margin-left: auto; display: flex; align-items: center; gap: 22px; }
+    .nav-links a { color: var(--muted); font-size: 0.95rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--fg); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent); color: var(--accent-ink);
+      padding: 10px 18px; border-radius: 999px; font-weight: 650; font-size: 0.95rem;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .btn:hover { filter: brightness(1.06); }
+    .btn.ghost { background: transparent; color: var(--fg); border-color: var(--border); }
+    .nav-links a.hide-sm { }
+
+    /* Hero */
+    .hero { padding: 72px 0 40px; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }
+    .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.8rem; margin: 0 0 14px; }
+    .hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.2rem); line-height: 1.08; margin: 0 0 18px; letter-spacing: -0.02em; }
+    .hero p.lead { font-size: 1.18rem; color: var(--muted); margin: 0 0 28px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .cta-note { color: var(--muted); font-size: 0.85rem; margin-top: 14px; }
+    .hero-shot { position: relative; }
+    .hero-shot img {
+      border-radius: 18px; box-shadow: var(--shadow);
+      border: 1px solid var(--border); margin-left: auto;
+    }
+
+    /* Trust chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 0; }
+    .chip { font-size: 0.85rem; color: var(--fg); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px; }
+
+    /* Sections */
+    section { padding: 64px 0; }
+    .section-head { max-width: 640px; margin: 0 auto 40px; text-align: center; }
+    .section-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); margin: 0 0 12px; letter-spacing: -0.02em; }
+    .section-head p { color: var(--muted); font-size: 1.08rem; margin: 0; }
+
+    .band { background: var(--band); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+    /* Feature grid */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .feature { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
+    .feature .ico { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, transparent); font-size: 20px; margin-bottom: 14px; }
+    .feature h3 { margin: 0 0 8px; font-size: 1.1rem; }
+    .feature p { margin: 0; color: var(--muted); font-size: 0.98rem; }
+
+    /* Privacy callouts */
+    .privacy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 820px; margin: 0 auto; }
+    .pc { display: flex; gap: 14px; padding: 18px 20px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; }
+    .pc .mark { color: var(--accent); font-weight: 800; font-size: 1.2rem; line-height: 1.4; }
+    .pc h3 { margin: 0 0 4px; font-size: 1.02rem; }
+    .pc p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+    /* Showcase */
+    .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .shots figure { margin: 0; }
+    .shots img { border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .shots figcaption { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 12px; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: step; }
+    .step { padding: 8px 4px; }
+    .step .n { width: 34px; height: 34px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; margin-bottom: 14px; }
+    .step h3 { margin: 0 0 6px; font-size: 1.1rem; }
+    .step p { margin: 0; color: var(--muted); font-size: 0.98rem; }
+
+    /* CTA */
+    .cta-band { text-align: center; }
+    .cta-band h2 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); margin: 0 0 14px; letter-spacing: -0.02em; }
+    .cta-band p { color: var(--muted); margin: 0 0 26px; font-size: 1.08rem; }
+
+    footer { border-top: 1px solid var(--border); padding: 36px 0; color: var(--muted); font-size: 0.9rem; }
+    .foot-inner { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; }
+    .foot-links { display: flex; gap: 20px; flex-wrap: wrap; }
+    .foot-links a { color: var(--muted); }
+    .foot-links a:hover { color: var(--fg); }
+    .disclaimer { margin-top: 14px; font-size: 0.82rem; }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; padding-top: 48px; gap: 36px; }
+      .hero-shot img { max-width: 380px; margin: 0 auto; }
+      .grid, .steps, .shots, .privacy-grid { grid-template-columns: 1fr; }
+      .nav-links a.hide-sm { display: none; }
+    }
   </style>
 </head>
 <body>
-<main>
-  <h1>Privacy Policy — LinkedIn Activity Tracker</h1>
-  <p class="meta">Last updated: July 8, 2026</p>
+  <nav>
+    <div class="wrap nav-inner">
+      <a class="brand" href="./"><img src="img/icon.png" alt="" /> LinkedIn Activity Tracker</a>
+      <div class="nav-links">
+        <a class="hide-sm" href="#features">Features</a>
+        <a class="hide-sm" href="#privacy">Privacy</a>
+        <a class="hide-sm" href="https://github.com/bystritskiy/LinkedInActivityTracker" target="_blank" rel="noreferrer">GitHub</a>
+        <a class="btn" href="https://chromewebstore.google.com/detail/gfnnloflkodejhnpbhpibhodclofpkkk" target="_blank" rel="noreferrer">Add to Chrome</a>
+      </div>
+    </div>
+  </nav>
 
-  <div class="card">
-    <p class="tldr">In one sentence: this extension stores a count of your own LinkedIn
-    activity on your own device and sends nothing anywhere. There is no server, no account,
-    and no analytics upload.</p>
-  </div>
+  <header class="wrap hero">
+    <div>
+      <p class="eyebrow">Privacy-first · Local only</p>
+      <h1>Your LinkedIn effort, tracked privately.</h1>
+      <p class="lead">A Chrome extension that passively logs your own LinkedIn activity —
+      reactions, comments, connections, posts, active time — into one local dashboard.
+      No automation. No account. Nothing leaves your device.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://chromewebstore.google.com/detail/gfnnloflkodejhnpbhpibhodclofpkkk" target="_blank" rel="noreferrer">Add to Chrome — free</a>
+        <a class="btn ghost" href="https://github.com/bystritskiy/LinkedInActivityTracker" target="_blank" rel="noreferrer">View source</a>
+      </div>
+      <div class="chips">
+        <span class="chip">🔒 Data stays on your device</span>
+        <span class="chip">👀 Observe-only</span>
+        <span class="chip">🧾 Open source</span>
+      </div>
+    </div>
+    <div class="hero-shot">
+      <img src="img/popup.png" width="1280" height="800" alt="LinkedIn Activity Tracker popup showing today's goal progress" />
+    </div>
+  </header>
 
-  <h2>Who this covers</h2>
-  <p>LinkedIn Activity Tracker (“the extension”) is a Chrome extension that passively logs
-  your own activity on LinkedIn for a personal daily challenge. This policy explains what
-  data the extension handles and how.</p>
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything in one local dashboard</h2>
+        <p>LinkedIn scatters your signals across a dozen pages. This brings them together —
+        without sending anything anywhere.</p>
+      </div>
+      <div class="grid">
+        <div class="feature">
+          <div class="ico">✅</div>
+          <h3>Daily activity</h3>
+          <p>Reactions, comments, replies, connection requests, messages, reposts, and posts you make yourself.</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🎯</div>
+          <h3>Goals &amp; streaks</h3>
+          <p>Set a daily target for each activity and watch your progress fill up in real time.</p>
+        </div>
+        <div class="feature">
+          <div class="ico">📈</div>
+          <h3>Analytics snapshots</h3>
+          <p>SSI, profile viewers, impressions, followers and search appearances captured when you open those pages.</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🗓️</div>
+          <h3>History</h3>
+          <p>A clean day-by-day table so you can see whether your routine is actually moving.</p>
+        </div>
+        <div class="feature">
+          <div class="ico">📤</div>
+          <h3>Your data, exportable</h3>
+          <p>Export everything as JSON, CSV, or Markdown at any time. It’s yours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2>What the extension records</h2>
-  <p>When you use LinkedIn yourself, the extension records counts and timestamps of actions
-  you personally perform:</p>
-  <ul>
-    <li>Reactions, comments and replies, reposts, and posts you create</li>
-    <li>Connection requests and messages you send</li>
-    <li>Active time you spend on LinkedIn</li>
-  </ul>
-  <p>When you open LinkedIn’s own analytics pages, the extension may record aggregate numbers
-  shown on those pages:</p>
-  <ul>
-    <li>Social Selling Index (SSI)</li>
-    <li>Profile-viewer counts</li>
-    <li>Dashboard metrics: post impressions, total followers, profile viewers, search
-    appearances, weekly posts, weekly comments</li>
-  </ul>
+  <section id="privacy" class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Built privacy-first, not privacy-later</h2>
+        <p>The whole point is to measure your effort without becoming another thing that
+        watches you.</p>
+      </div>
+      <div class="privacy-grid">
+        <div class="pc"><span class="mark">✓</span><div><h3>Stays on your device</h3><p>All data lives in <code>chrome.storage.local</code>. No server, no account, no cloud sync.</p></div></div>
+        <div class="pc"><span class="mark">✓</span><div><h3>Observe-only</h3><p>It never clicks, types, scrolls, or submits anything on LinkedIn for you.</p></div></div>
+        <div class="pc"><span class="mark">✓</span><div><h3>No content stored</h3><p>The text of your messages, comments, and posts is never recorded.</p></div></div>
+        <div class="pc"><span class="mark">✓</span><div><h3>Open source</h3><p>Every line is public on GitHub. Read exactly what it does before you trust it.</p></div></div>
+      </div>
+      <p style="text-align:center;margin-top:28px;"><a href="privacy.html">Read the full privacy policy →</a></p>
+    </div>
+  </section>
 
-  <h2>What the extension never records</h2>
-  <ul>
-    <li>The text of your messages, comments, or posts</li>
-    <li>Cookies, tokens, passwords, emails, or photos</li>
-    <li>Other people’s profiles, individual profile viewers, or private content</li>
-    <li>Your browsing on any site other than LinkedIn</li>
-  </ul>
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>See it in action</h2>
+        <p>A fast popup for today, a full dashboard for the bigger picture.</p>
+      </div>
+      <div class="shots">
+        <figure>
+          <img src="img/dashboard-today.png" width="1280" height="800" alt="Dashboard showing today's progress and event log" />
+          <figcaption>Today — goals &amp; event log</figcaption>
+        </figure>
+        <figure>
+          <img src="img/dashboard-analytics.png" width="1280" height="800" alt="Analytics tab with SSI and LinkedIn dashboard metrics" />
+          <figcaption>Analytics — SSI &amp; metrics</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
 
-  <h2>Where your data is stored</h2>
-  <p>All data is stored <strong>locally in your browser</strong> using
-  <code>chrome.storage.local</code>. It never leaves your device. There is:</p>
-  <ul>
-    <li>No backend server and no account</li>
-    <li>No cloud sync</li>
-    <li>No analytics or telemetry upload of your activity data</li>
-    <li>No sharing or selling of data to third parties</li>
-  </ul>
+  <section class="band">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Up and running in a minute</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>Install</h3>
+          <p>Add it from the Chrome Web Store — no signup, no configuration.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>Use LinkedIn normally</h3>
+          <p>Keep doing what you do. The extension quietly counts the actions you take yourself.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>Check your dashboard</h3>
+          <p>Open the popup for today or the dashboard for history, analytics, and goals.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <h2>Optional metadata (off by default)</h2>
-  <p>Some optional, more detailed metadata (such as comment length or the profile URL of a
-  connection request) is <strong>only</strong> recorded if you explicitly opt in via the
-  extension’s privacy settings. It remains local like everything else. Any stored URL is
-  reduced to its origin and path (query strings and fragments are removed) before it is saved.</p>
-
-  <h2>Permissions the extension requests</h2>
-  <ul>
-    <li><code>storage</code> — to save your activity data locally on your device.</li>
-    <li><code>idle</code> — to measure active time on LinkedIn accurately by detecting when
-    you step away.</li>
-    <li>Access to <code>https://www.linkedin.com/*</code> — the extension only runs on
-    LinkedIn, where it observes your own activity. It does not run on any other website.</li>
-  </ul>
-  <p>The extension only <em>observes</em> LinkedIn. It never clicks, types, scrolls, submits
-  forms, sends messages, or performs any action on your behalf.</p>
-
-  <h2>Controlling and deleting your data</h2>
-  <ul>
-    <li>You can export all of your local data as JSON, CSV, or Markdown at any time from the
-    dashboard.</li>
-    <li>You can pause tracking or clear your data from the extension.</li>
-    <li>Removing the extension from Chrome deletes all of its local data.</li>
-  </ul>
-
-  <h2>Children</h2>
-  <p>The extension is not directed to children under 13 and does not knowingly collect data
-  from them.</p>
-
-  <h2>Changes to this policy</h2>
-  <p>If this policy changes, the “Last updated” date above will be revised and the new version
-  will be published at this URL.</p>
-
-  <h2>Contact</h2>
-  <p>Questions about privacy: <a href="mailto:q80061@gmail.com">q80061@gmail.com</a>.
-  Source code: <a href="https://github.com/bystritskiy/LinkedInActivityTracker">github.com/bystritskiy/LinkedInActivityTracker</a>.</p>
+  <section class="cta-band">
+    <div class="wrap">
+      <h2>Track your LinkedIn habit — privately.</h2>
+      <p>Free, open source, and everything stays on your device.</p>
+      <div class="cta-row" style="justify-content:center;">
+        <a class="btn" href="https://chromewebstore.google.com/detail/gfnnloflkodejhnpbhpibhodclofpkkk" target="_blank" rel="noreferrer">Add to Chrome</a>
+        <a class="btn ghost" href="https://github.com/bystritskiy/LinkedInActivityTracker" target="_blank" rel="noreferrer">Star on GitHub</a>
+      </div>
+    </div>
+  </section>
 
   <footer>
-    LinkedIn Activity Tracker is not affiliated with LinkedIn. LinkedIn is a trademark of its
-    respective owner.
+    <div class="wrap">
+      <div class="foot-inner">
+        <div class="brand"><img src="img/icon.png" alt="" style="width:22px;height:22px;border-radius:5px;" /> LinkedIn Activity Tracker</div>
+        <div class="foot-links">
+          <a href="#features">Features</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="https://github.com/bystritskiy/LinkedInActivityTracker" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="mailto:q80061@gmail.com">Contact</a>
+        </div>
+      </div>
+      <p class="disclaimer">Not affiliated with LinkedIn. LinkedIn is a trademark of its respective owner.</p>
+    </div>
   </footer>
-</main>
 </body>
 </html>

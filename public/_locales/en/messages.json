@@ -4,7 +4,7 @@
     "description": "The name of the extension."
   },
   "appDescription": {
-    "message": "Locally and passively logs your own LinkedIn activity for a daily challenge. Never performs actions for you. All data stays on your device.",
+    "message": "Passively logs your own LinkedIn activity for a daily challenge. Never acts for you. All data stays on your device.",
     "description": "The description of the extension."
   }
 }
