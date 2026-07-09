@@ -157,3 +157,30 @@ device and is never transmitted off the device.*
 - Update `CHANGELOG.md` for every published version.
 - Keep screenshots current when dashboard, popup, privacy settings, or export flows change visually.
 - Watch Chrome Web Store reviews, support issues, and LinkedIn selector diagnostics after each release.
+
+## Automated Chrome Web Store releases
+
+GitHub Actions publishes updates when a `vX.Y.Z` tag is pushed. The tag version must match
+`package.json`, `package-lock.json`, `public/manifest.json`, and the generated
+`dist/manifest.json`.
+
+Required repository secrets:
+
+- `CHROME_WEBSTORE_CLIENT_ID`
+- `CHROME_WEBSTORE_CLIENT_SECRET`
+- `CHROME_WEBSTORE_REFRESH_TOKEN`
+- `CHROME_WEBSTORE_PUBLISHER_ID`
+
+The workflow uses the public extension ID:
+`gfnnloflkodejhnpbhpibhodclofpkkk`.
+
+Publishing blocks on Chrome Web Store validation warnings by default. Set
+`CHROME_WEBSTORE_BLOCK_ON_WARNINGS=false` in the workflow environment only if a known
+non-blocking warning should not stop a release.
+
+Release command:
+
+```sh
+git tag -a v1.0.1 -m "LinkedIn Activity Tracker 1.0.1"
+git push origin main --follow-tags
+```
