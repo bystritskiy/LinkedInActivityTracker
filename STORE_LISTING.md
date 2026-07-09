@@ -1,7 +1,10 @@
 # Chrome Web Store — Listing & Submission Copy
 
 Everything below is ready to paste into the Chrome Web Store Developer Dashboard.
-Version being submitted: **1.0.0**.
+Published version: **1.0.0**.
+
+Live listing:
+https://chromewebstore.google.com/detail/linkedin-activity-tracker/gfnnloflkodejhnpbhpibhodclofpkkk
 
 ---
 
@@ -140,9 +143,17 @@ device and is never transmitted off the device.*
 - [x] Clean upload ZIP (manifest at root, no `.DS_Store`, no sourcemaps)
 - [x] `npm run typecheck` clean
 - [x] `npm test` green (62 passing)
-- [ ] GitHub Pages enabled → privacy policy URL live
-- [ ] Screenshots captured (≥1 at 1280×800)
-- [ ] $5 developer registration paid
-- [ ] Listing copy pasted, privacy disclosures filled
-- [ ] ZIP uploaded and submitted for review
-```
+- [x] GitHub Pages enabled → privacy policy URL live
+- [x] Screenshots captured (≥1 at 1280×800)
+- [x] $5 developer registration paid
+- [x] Listing copy pasted, privacy disclosures filled
+- [x] ZIP uploaded and submitted for review
+- [x] Chrome Web Store review passed and listing published
+
+## Post-publish maintenance
+
+- Keep `package.json`, `package-lock.json`, and `public/manifest.json` versions in sync before every upload.
+- Run `npm run typecheck`, `npm test`, and `npm run build` before packaging a new release.
+- Update `CHANGELOG.md` for every published version.
+- Keep screenshots current when dashboard, popup, privacy settings, or export flows change visually.
+- Watch Chrome Web Store reviews, support issues, and LinkedIn selector diagnostics after each release.

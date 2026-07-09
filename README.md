@@ -6,6 +6,7 @@ It passively records the actions you perform yourself, keeps the data in your
 browser, and helps you understand whether your LinkedIn routine is actually
 moving.
 
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/linkedin-activity-tracker/gfnnloflkodejhnpbhpibhodclofpkkk) ·
 [Source code](https://github.com/bystritskiy/LinkedInActivityTracker)
 
 ## Why This Exists
@@ -78,6 +79,12 @@ private content are not stored.
 - 24-hour date/time display
 - Branded in-page notifications so users know the feedback comes from the
   extension
+
+## Install
+
+Install the published extension from the Chrome Web Store:
+
+[LinkedIn Activity Tracker on Chrome Web Store](https://chromewebstore.google.com/detail/linkedin-activity-tracker/gfnnloflkodejhnpbhpibhodclofpkkk)
 
 ## Install From Source
 
