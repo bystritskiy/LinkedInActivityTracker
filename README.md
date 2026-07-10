@@ -80,6 +80,16 @@ private content are not stored.
 - Branded in-page notifications so users know the feedback comes from the
   extension
 
+## Screenshots
+
+![Popup with today's goal progress](docs/img/popup.png)
+
+![Dashboard — today's goals](docs/img/dashboard-today.png)
+
+![Dashboard — activity heatmap and history](docs/img/dashboard-history.png)
+
+![Dashboard — SSI and LinkedIn analytics](docs/img/dashboard-analytics.png)
+
 ## Install
 
 Install the published extension from the Chrome Web Store:
