@@ -122,6 +122,9 @@ export const en = {
   'dash.privacy.heroBody':
     'LinkedIn Activity Tracker runs in your browser, stores data in local Chrome storage, and does not send your activity to any server. The extension is open source, so the code can be inspected.',
   'dash.privacy.sourceCode': 'View source code',
+  'dash.privacy.safety': 'Safe for your account',
+  'dash.privacy.safetyBody':
+    'The extension performs no actions on LinkedIn on your behalf and automates nothing — no auto-likes, auto-messages, or auto-connects. It only records the activity you do yourself, so you can later analyze why your SSI grows or stalls.',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
     'Timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, aggregate profile-viewer counts, aggregate dashboard metrics, and optional local metadata such as comment length and invitation profile details.',

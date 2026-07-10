@@ -19,6 +19,17 @@ different places.
 LinkedIn Activity Tracker brings those signals into one local dashboard without
 automating LinkedIn and without sending your data anywhere.
 
+## Safe by Design
+
+The extension is completely safe for your LinkedIn account:
+
+- It performs **no actions on your behalf** — it never clicks, likes, comments,
+  connects, messages, or posts for you.
+- It **automates nothing**. There are no auto-likes, auto-messages,
+  auto-connects, or scheduled actions of any kind.
+- It only **observes the activity you do yourself** and records it locally, so
+  you can later analyze why your SSI and profile stats grow — or don't.
+
 ## Privacy First
 
 This is the most important part of the project:

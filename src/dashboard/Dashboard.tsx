@@ -975,6 +975,10 @@ function PrivacyTab(props: {
       </div>
       <div className="info-grid">
         <article>
+          <h3>{t('dash.privacy.safety')}</h3>
+          <p>{t('dash.privacy.safetyBody')}</p>
+        </article>
+        <article>
           <h3>{t('dash.privacy.whatStored')}</h3>
           <p>{t('dash.privacy.whatStoredBody')}</p>
         </article>
