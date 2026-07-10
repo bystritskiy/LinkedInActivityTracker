@@ -10,12 +10,6 @@ moving.
 
 ![LinkedIn Activity Tracker popup on top of the LinkedIn feed](docs/img/hero.png)
 
-<p align="center">
-  <img src="docs/img/dashboard-today.png" alt="Dashboard — today's goals" width="32%" />
-  <img src="docs/img/dashboard-history.png" alt="Dashboard — activity heatmap and history" width="32%" />
-  <img src="docs/img/dashboard-analytics.png" alt="Dashboard — SSI and LinkedIn analytics" width="32%" />
-</p>
-
 ## Why This Exists
 
 LinkedIn gives you scattered signals: reactions, comments, profile views, SSI,
@@ -54,6 +48,8 @@ scroll, type, submit forms, send messages, or perform actions for you.
 - Posts
 - Active time on LinkedIn
 
+![Dashboard — today's goals](docs/img/dashboard-today.png)
+
 ### LinkedIn Analytics
 
 The extension can also record aggregate metrics when you open the relevant
@@ -72,6 +68,8 @@ LinkedIn pages:
 Only aggregate numbers are stored. Individual viewers, people, posts, and
 private content are not stored.
 
+![Dashboard — SSI and LinkedIn analytics](docs/img/dashboard-analytics.png)
+
 ## Features
 
 - Local dashboard with daily progress and history
@@ -86,6 +84,8 @@ private content are not stored.
 - 24-hour date/time display
 - Branded in-page notifications so users know the feedback comes from the
   extension
+
+![Dashboard — activity heatmap and history](docs/img/dashboard-history.png)
 
 ## Install
 
