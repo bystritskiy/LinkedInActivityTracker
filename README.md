@@ -2,7 +2,7 @@
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/gfnnloflkodejhnpbhpibhodclofpkkk?label=Chrome%20Web%20Store&color=0a66c2)](https://chromewebstore.google.com/detail/linkedin-activity-tracker/gfnnloflkodejhnpbhpibhodclofpkkk)
 [![Manifest V3](https://img.shields.io/badge/manifest-v3-4285F4)](public/manifest.json)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](#license)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Local-first Chrome extension for tracking your own LinkedIn activity.
 
