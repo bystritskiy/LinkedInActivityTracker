@@ -8,7 +8,13 @@ moving.
 
 <a href="https://chromewebstore.google.com/detail/linkedin-activity-tracker/gfnnloflkodejhnpbhpibhodclofpkkk"><img src="docs/img/chrome-web-store-badge.png" alt="Available in the Chrome Web Store" width="248" /></a>
 
-[Source code](https://github.com/bystritskiy/LinkedInActivityTracker)
+![LinkedIn Activity Tracker popup on top of the LinkedIn feed](docs/img/hero.png)
+
+<p align="center">
+  <img src="docs/img/dashboard-today.png" alt="Dashboard — today's goals" width="32%" />
+  <img src="docs/img/dashboard-history.png" alt="Dashboard — activity heatmap and history" width="32%" />
+  <img src="docs/img/dashboard-analytics.png" alt="Dashboard — SSI and LinkedIn analytics" width="32%" />
+</p>
 
 ## Why This Exists
 
@@ -80,16 +86,6 @@ private content are not stored.
 - 24-hour date/time display
 - Branded in-page notifications so users know the feedback comes from the
   extension
-
-## Screenshots
-
-![Popup with today's goal progress](docs/img/popup.png)
-
-![Dashboard — today's goals](docs/img/dashboard-today.png)
-
-![Dashboard — activity heatmap and history](docs/img/dashboard-history.png)
-
-![Dashboard — SSI and LinkedIn analytics](docs/img/dashboard-analytics.png)
 
 ## Install
 
