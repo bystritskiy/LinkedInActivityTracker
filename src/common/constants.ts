@@ -39,10 +39,10 @@ export const DEFAULT_TRACKING: TrackingToggles = {
 }
 
 export const DEFAULT_PRIVACY: PrivacySettings = {
-  storeCommentLength: false,
+  storeCommentLength: true,
   storeCommentMeaningful: true,
-  storeConnectionProfileUrl: false,
-  storeConnectionDisplayName: false,
+  storeConnectionProfileUrl: true,
+  storeConnectionDisplayName: true,
   meaningfulCommentMinChars: 20,
 }
 

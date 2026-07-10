@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { dayKeyFromDate, formatLocalDateTime24, formatLocalTime24 } from '../common/date'
+import { dayKeyFromDate, formatLocalDateTime24 } from '../common/date'
 import { eventLabelKey, translator } from '../common/i18n'
 import type { MessageKey } from '../common/i18n'
 import type { ExportResult, SettingsPatch } from '../common/messages'
@@ -12,7 +12,6 @@ import type {
   Settings,
   SSIEntry,
   StorageRoot,
-  TrackedEvent,
   TrackedEventType,
 } from '../common/types'
 import {
@@ -25,14 +24,22 @@ import {
 
 type Tab = 'today' | 'history' | 'ssi' | 'goals' | 'privacy' | 'diagnostics'
 
-const tabs: Array<{ key: Tab; label: MessageKey }> = [
+const mainTabs: Array<{ key: Tab; label: MessageKey }> = [
   { key: 'today', label: 'nav.today' },
   { key: 'history', label: 'nav.history' },
   { key: 'ssi', label: 'nav.ssi' },
   { key: 'goals', label: 'nav.goals' },
+]
+
+const utilityTabs: Array<{ key: Tab; label: MessageKey }> = [
   { key: 'privacy', label: 'nav.privacy' },
   { key: 'diagnostics', label: 'nav.diagnostics' },
 ]
+
+const goalStatusKeys = {
+  done: 'dash.today.goal.done',
+  remaining: 'dash.today.goal.remaining',
+} as const satisfies Record<string, MessageKey>
 
 const manualTypes = [
   'reaction',
@@ -45,10 +52,6 @@ const manualTypes = [
 
 function eventLabel(settings: Settings, type: TrackedEventType): string {
   return translator(settings.locale)(eventLabelKey(type))
-}
-
-function sortedEvents(events: TrackedEvent[]): TrackedEvent[] {
-  return [...events].sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 }
 
 function sortedDayKeys(state: StorageRoot): string[] {
@@ -109,41 +112,62 @@ export function Dashboard() {
   return (
     <main className="lat-dashboard">
       <header className="app-header">
-        <div>
+        <div className="app-title">
           <h1>{t('dash.title')}</h1>
-          <p>{todayKey}</p>
+          <p>
+            {todayKey}
+            <span className="header-active-time">
+              {t('events.activeTime')}: {todaySummary.activeMinutes} {t('common.minutes')}
+            </span>
+          </p>
         </div>
         <div className="app-actions">
-          <label>
-            {t('settings.language')}
-            <select
-              value={state.settings.locale}
-              onChange={(e) =>
-                void run(() =>
-                  sendMessage({
-                    kind: 'updateSettings',
-                    patch: { locale: e.target.value as LocaleCode },
-                  }),
-                )
-              }
-            >
-              <option value="en">English</option>
-              <option value="ru">Русский</option>
-            </select>
-          </label>
           <button
             type="button"
+            className={state.settings.paused ? 'tracking-toggle paused' : 'tracking-toggle'}
             onClick={() =>
               void run(() => sendMessage({ kind: 'setPaused', paused: !state.settings.paused }))
             }
+            aria-label={state.settings.paused ? t('popup.resume') : t('popup.pause')}
+            title={state.settings.paused ? t('popup.resume') : t('popup.pause')}
           >
-            {state.settings.paused ? t('popup.resume') : t('popup.pause')}
+            <TrackingStatusIcon active={!state.settings.paused} />
+            {state.settings.paused ? t('popup.paused') : t('dash.header.trackingActive')}
           </button>
+          <nav className="utility-tabs" aria-label="Settings sections">
+            {utilityTabs.map((item) => (
+              <button
+                type="button"
+                key={item.key}
+                className={tab === item.key ? 'active' : ''}
+                onClick={() => setTab(item.key)}
+              >
+                {t(item.label)}
+              </button>
+            ))}
+          </nav>
+          <select
+            className="language-select"
+            aria-label={t('settings.language')}
+            title={t('settings.language')}
+            value={state.settings.locale}
+            onChange={(e) =>
+              void run(() =>
+                sendMessage({
+                  kind: 'updateSettings',
+                  patch: { locale: e.target.value as LocaleCode },
+                }),
+              )
+            }
+          >
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+          </select>
         </div>
       </header>
 
       <nav className="tabs" aria-label="Dashboard sections">
-        {tabs.map((item) => (
+        {mainTabs.map((item) => (
           <button
             type="button"
             key={item.key}
@@ -158,15 +182,7 @@ export function Dashboard() {
       {error && <p className="error">{error}</p>}
       {notice && <p className="notice">{notice}</p>}
 
-      {tab === 'today' && (
-        <TodayTab
-          state={state}
-          dayKey={todayKey}
-          summary={todaySummary}
-          events={today?.events ?? []}
-          onRun={run}
-        />
-      )}
+      {tab === 'today' && <TodayTab state={state} summary={todaySummary} />}
       {tab === 'history' && <HistoryTab state={state} />}
       {tab === 'ssi' && <SsiTab state={state} />}
       {tab === 'goals' && <GoalsTab state={state} onRun={run} />}
@@ -176,29 +192,67 @@ export function Dashboard() {
   )
 }
 
+function TrackingStatusIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      className="status-icon"
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      fill="none"
+      focusable="false"
+    >
+      <path d="M8 2.5V7" />
+      <path d="M5.1 4.6A5 5 0 1 0 10.9 4.6" />
+      {!active && <path d="M3 3L13 13" />}
+    </svg>
+  )
+}
+
 function TodayTab(props: {
   state: StorageRoot
-  dayKey: string
   summary: ReturnType<typeof summarizeStats>
-  events: TrackedEvent[]
-  onRun: (action: () => Promise<void>, success?: string) => Promise<void>
 }) {
   const t = translator(props.state.settings.locale)
   const rows = goalRows(props.summary, props.state.settings.goals)
+  const goalRowsWithTargets = rows.filter((row) => row.target > 0)
+  const targetActions = goalRowsWithTargets.reduce((sum, row) => sum + row.target, 0)
+  const completedActions = goalRowsWithTargets.reduce(
+    (sum, row) => sum + Math.min(row.current, row.target),
+    0,
+  )
+  const completionRatio = targetActions > 0 ? Math.min(1, completedActions / targetActions) : 1
 
   return (
     <section>
-      <h2>{t('dash.today.heading')}</h2>
+      <div className="section-heading today-heading">
+        <div>
+          <h2>{t('dash.today.heading')}</h2>
+          <p>{t('dash.today.subtitle')}</p>
+        </div>
+      </div>
+
+      <div className="completion-meter">
+        <div className="completion-meter-label">
+          <span>{t('dash.today.summary.completion')}</span>
+          <strong>{Math.round(completionRatio * 100)}%</strong>
+        </div>
+        <div className="completion-track" aria-hidden="true">
+          <span style={{ width: `${Math.round(completionRatio * 100)}%` }} />
+        </div>
+      </div>
+
+      <MetricCaptureChecklist state={props.state} dayKey={props.summary.dayKey} />
+
       <div className="goal-grid">
-        <article className="metric">
-          <span>{t('events.activeTime')}</span>
-          <strong>
-            {props.summary.activeMinutes} {t('common.minutes')}
-          </strong>
-        </article>
-        {rows.map((row) => (
-          <article className="metric" key={row.key}>
-            <span>{t(eventLabelKey(row.key))}</span>
+        {goalRowsWithTargets.map((row) => (
+          <article
+            className={`metric goal-card ${row.met ? 'is-complete' : ''}`}
+            key={row.key}
+          >
+            <div className="metric-topline">
+              <span>{t(eventLabelKey(row.key))}</span>
+              <em>{goalStatusLabel(t, row.current, row.target, row.met)}</em>
+            </div>
             <strong>
               {row.current} / {row.target}
             </strong>
@@ -208,49 +262,65 @@ function TodayTab(props: {
           </article>
         ))}
       </div>
-
-      <h3>{t('dash.today.events')}</h3>
-      {props.events.length === 0 ? (
-        <p>{t('dash.today.noEvents')}</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>{t('dash.today.eventTime')}</th>
-              <th>{t('dash.today.eventType')}</th>
-              <th>{t('dash.today.eventSource')}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {sortedEvents(props.events).map((event) => (
-              <tr key={event.id}>
-                <td>{formatLocalTime24(event.timestamp)}</td>
-                <td>{eventLabel(props.state.settings, event.type)}</td>
-                <td>{t(event.source === 'manual' ? 'dash.source.manual' : 'dash.source.automatic')}</td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void props.onRun(() =>
-                        sendMessage({
-                          kind: 'deleteEvent',
-                          dayKey: props.dayKey,
-                          eventId: event.id,
-                        }),
-                      )
-                    }
-                  >
-                    {t('common.delete')}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
     </section>
   )
+}
+
+function MetricCaptureChecklist({ state, dayKey }: { state: StorageRoot; dayKey: string }) {
+  const t = translator(state.settings.locale)
+  const day = state.days[dayKey]
+  const items: Array<{ label: string; href: string; recorded: boolean }> = [
+    {
+      label: t('dash.ssi.heading'),
+      href: 'https://www.linkedin.com/sales/ssi',
+      recorded: Boolean(day?.ssiEntries?.length || day?.stats.ssi),
+    },
+    {
+      label: t('dash.views.heading'),
+      href: 'https://www.linkedin.com/analytics/profile-views/',
+      recorded: Boolean(day?.profileViewsEntries?.length || day?.stats.profileViews),
+    },
+    {
+      label: t('dash.linkedinDashboard.heading'),
+      href: 'https://www.linkedin.com/dashboard/',
+      recorded: Boolean(day?.linkedInDashboardEntries?.length || day?.stats.linkedInDashboard),
+    },
+  ]
+  const missing = items.filter((item) => !item.recorded)
+  if (missing.length === 0) return null
+
+  return (
+    <aside className="capture-checklist">
+      <div>
+        <strong>{t('dash.today.capture.heading')}</strong>
+        <p>{t('dash.today.capture.body')}</p>
+      </div>
+      <ul>
+        {items.map((item) => (
+          <li key={item.href} className={item.recorded ? 'is-recorded' : ''}>
+            <span>{item.label}</span>
+            {item.recorded ? (
+              <em>{t('dash.today.capture.recorded')}</em>
+            ) : (
+              <a href={item.href} target="_blank" rel="noreferrer">
+                {t('dash.today.capture.open')}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
+}
+
+function goalStatusLabel(
+  t: (key: MessageKey, params?: Record<string, string | number>) => string,
+  current: number,
+  target: number,
+  met: boolean,
+): string {
+  if (met) return t(goalStatusKeys.done)
+  return t(goalStatusKeys.remaining, { count: target - current })
 }
 
 function HistoryTab({ state }: { state: StorageRoot }) {
@@ -360,7 +430,6 @@ function SsiTab(props: {
   state: StorageRoot
 }) {
   const t = translator(props.state.settings.locale)
-  const [hideDuplicateAnalytics, setHideDuplicateAnalytics] = useState(true)
 
   // All observations across all days, newest first. Pre-v2 days may carry only
   // the single stats.ssi snapshot.
@@ -391,15 +460,9 @@ function SsiTab(props: {
   const latestSSI = entries[0]
   const latestViews = viewEntries[0]
   const latestDashboard = dashboardEntries[0]
-  const visibleEntries = hideDuplicateAnalytics
-    ? compactEntryList(entries, ssiFingerprint)
-    : entries
-  const visibleViewEntries = hideDuplicateAnalytics
-    ? compactEntryList(viewEntries, profileViewsFingerprint)
-    : viewEntries
-  const visibleDashboardEntries = hideDuplicateAnalytics
-    ? compactEntryList(dashboardEntries, linkedInDashboardFingerprint)
-    : dashboardEntries
+  const visibleEntries = compactEntryList(entries, ssiFingerprint)
+  const visibleViewEntries = compactEntryList(viewEntries, profileViewsFingerprint)
+  const visibleDashboardEntries = compactEntryList(dashboardEntries, linkedInDashboardFingerprint)
 
   return (
     <section className="analytics-tab">
@@ -409,15 +472,6 @@ function SsiTab(props: {
           <p>{t('dash.ssi.disclaimer')}</p>
         </div>
       </div>
-
-      <label className="inline-toggle analytics-option">
-        <input
-          type="checkbox"
-          checked={hideDuplicateAnalytics}
-          onChange={(e) => setHideDuplicateAnalytics(e.target.checked)}
-        />
-        {t('dash.analytics.hideDuplicateRecords')}
-      </label>
 
       <div className="analytics-summary">
         <MetricCard
@@ -479,7 +533,6 @@ function SsiTab(props: {
                 <th>{t('dash.ssi.findRightPeople')}</th>
                 <th>{t('dash.ssi.engageWithInsights')}</th>
                 <th>{t('dash.ssi.buildRelationships')}</th>
-                <th>{t('dash.ssi.source')}</th>
               </tr>
             </thead>
             <tbody>
@@ -491,7 +544,6 @@ function SsiTab(props: {
                   <td>{formatMetricValue(e.findRightPeople)}</td>
                   <td>{formatMetricValue(e.engageWithInsights)}</td>
                   <td>{formatMetricValue(e.buildRelationships)}</td>
-                  <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -515,7 +567,6 @@ function SsiTab(props: {
                 <th>{t('dash.ssi.date')}</th>
                 <th>{t('dash.views.viewers')}</th>
                 <th>{t('dash.views.rangeDays')}</th>
-                <th>{t('dash.ssi.source')}</th>
               </tr>
             </thead>
             <tbody>
@@ -524,7 +575,6 @@ function SsiTab(props: {
                   <td>{e.timestamp ? formatLocalDateTime24(e.timestamp) : '-'}</td>
                   <td>{formatMetricValue(e.viewers)}</td>
                   <td>{formatMetricValue(e.rangeDays)}</td>
-                  <td>{e.source ? t(`dash.source.${e.source}`) : '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -541,36 +591,14 @@ function SsiTab(props: {
       {visibleDashboardEntries.length === 0 ? (
         <p>{t('dash.linkedinDashboard.noData')}</p>
       ) : (
-        <div className="table-scroll">
-          <table className="analytics-table wide">
-            <thead>
-              <tr>
-                <th>{t('dash.ssi.date')}</th>
-                <th>{t('dash.linkedinDashboard.postImpressions')}</th>
-                <th>{t('dash.linkedinDashboard.postImpressionsRangeDays')}</th>
-                <th>{t('dash.linkedinDashboard.followers')}</th>
-                <th>{t('dash.linkedinDashboard.followersChangePercent')}</th>
-                <th>{t('dash.linkedinDashboard.profileViewers')}</th>
-                <th>{t('dash.linkedinDashboard.profileViewersRangeDays')}</th>
-                <th>{t('dash.linkedinDashboard.searchAppearances')}</th>
-                <th>{t('dash.linkedinDashboard.searchAppearancesPeriod')}</th>
-                <th>{t('dash.linkedinDashboard.searchAppearancesChangePercent')}</th>
-                <th>{t('dash.linkedinDashboard.weeklyPosts')}</th>
-                <th>{t('dash.linkedinDashboard.weeklyComments')}</th>
-                <th>{t('dash.linkedinDashboard.weeklyPeriod')}</th>
-                <th>{t('dash.ssi.source')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleDashboardEntries.map((e, i) => (
-                <LinkedInDashboardRow
-                  key={`${e.timestamp}-${i}`}
-                  entry={e}
-                  sourceLabel={e.source ? t(`dash.source.${e.source}`) : '-'}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div className="dashboard-snapshot-list">
+          {visibleDashboardEntries.map((e, i) => (
+            <LinkedInDashboardSnapshot
+              key={`${e.timestamp}-${i}`}
+              entry={e}
+              locale={props.state.settings.locale}
+            />
+          ))}
         </div>
       )}
     </section>
@@ -617,87 +645,206 @@ function MetricCard(props: { label: string; value: number | string | undefined; 
   )
 }
 
-function LinkedInDashboardRow({
+function LinkedInDashboardSnapshot({
   entry,
-  sourceLabel,
+  locale,
 }: {
   entry: LinkedInDashboardEntry
-  sourceLabel: string
+  locale: LocaleCode
 }) {
+  const t = translator(locale)
+
   return (
-    <tr>
-      <td>{entry.timestamp ? formatLocalDateTime24(entry.timestamp) : '-'}</td>
-      <td>{formatMetricValue(entry.postImpressions)}</td>
-      <td>{formatMetricValue(entry.postImpressionsRangeDays)}</td>
-      <td>{formatMetricValue(entry.followers)}</td>
-      <td>{formatMetricValue(entry.followersChangePercent)}</td>
-      <td>{formatMetricValue(entry.profileViewers)}</td>
-      <td>{formatMetricValue(entry.profileViewersRangeDays)}</td>
-      <td>{formatMetricValue(entry.searchAppearances)}</td>
-      <td>{formatMetricValue(entry.searchAppearancesPeriod)}</td>
-      <td>{formatMetricValue(entry.searchAppearancesChangePercent)}</td>
-      <td>{formatMetricValue(entry.weeklyPosts)}</td>
-      <td>{formatMetricValue(entry.weeklyComments)}</td>
-      <td>{formatMetricValue(entry.weeklyPeriod)}</td>
-      <td>{sourceLabel}</td>
-    </tr>
+    <article className="dashboard-snapshot">
+      <header>
+        <span>{entry.timestamp ? formatLocalDateTime24(entry.timestamp) : '-'}</span>
+      </header>
+      <div className="dashboard-snapshot-grid">
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.postImpressions')}
+          value={entry.postImpressions}
+          meta={
+            entry.postImpressionsRangeDays
+              ? `${formatMetricValue(entry.postImpressionsRangeDays)}d`
+              : undefined
+          }
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.followers')}
+          value={entry.followers}
+          meta={
+            entry.followersChangePercent !== undefined
+              ? `${formatMetricValue(entry.followersChangePercent)}%`
+              : undefined
+          }
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.profileViewers')}
+          value={entry.profileViewers}
+          meta={
+            entry.profileViewersRangeDays
+              ? `${formatMetricValue(entry.profileViewersRangeDays)}d`
+              : undefined
+          }
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.searchAppearances')}
+          value={entry.searchAppearances}
+          meta={entry.searchAppearancesPeriod}
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.searchAppearancesChangePercent')}
+          value={
+            entry.searchAppearancesChangePercent !== undefined
+              ? `${formatMetricValue(entry.searchAppearancesChangePercent)}%`
+              : undefined
+          }
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.weeklyPosts')}
+          value={entry.weeklyPosts}
+          meta={entry.weeklyPeriod}
+        />
+        <DashboardSnapshotMetric
+          label={t('dash.linkedinDashboard.weeklyComments')}
+          value={entry.weeklyComments}
+          meta={entry.weeklyPeriod}
+        />
+      </div>
+    </article>
   )
 }
+
+function DashboardSnapshotMetric(props: {
+  label: string
+  value: number | string | undefined
+  meta?: string
+}) {
+  return (
+    <div className="dashboard-snapshot-metric">
+      <span>{props.label}</span>
+      <strong>{formatMetricValue(props.value)}</strong>
+      {props.meta && <em>{props.meta}</em>}
+    </div>
+  )
+}
+
+const goalFields = [
+  { key: 'reactions', label: 'events.reaction' },
+  { key: 'comments', label: 'events.comment' },
+  { key: 'connectionRequests', label: 'events.connection_request' },
+  { key: 'messages', label: 'events.message' },
+  { key: 'reposts', label: 'events.repost' },
+  { key: 'posts', label: 'events.post' },
+] as const satisfies ReadonlyArray<{ key: keyof DailyGoals; label: MessageKey }>
+
+const GOAL_MAX = 99
 
 function GoalsTab(props: {
   state: StorageRoot
   onRun: (action: () => Promise<void>, success?: string) => Promise<void>
 }) {
   const t = translator(props.state.settings.locale)
-  const [goals, setGoals] = useState<DailyGoals>(props.state.settings.goals)
+  const saved = props.state.settings.goals
+  const [goals, setGoals] = useState<DailyGoals>(saved)
 
   useEffect(() => setGoals(props.state.settings.goals), [props.state.settings.goals])
 
-  function update<K extends keyof DailyGoals>(key: K, value: string): void {
-    setGoals((current) => ({ ...current, [key]: Number(value) }))
+  const todayKey = dayKeyFromDate(new Date())
+  const todayStats = props.state.days[todayKey]?.stats ?? {
+    dayKey: todayKey,
+    activeSeconds: 0,
+    counters: {},
+  }
+  const summary = summarizeStats(todayStats)
+
+  const dirty = goalFields.some((field) => goals[field.key] !== saved[field.key])
+  const total = goalFields.reduce((sum, field) => sum + goals[field.key], 0)
+
+  function update(key: keyof DailyGoals, value: number): void {
+    const next = Math.min(GOAL_MAX, Math.max(0, Math.floor(value) || 0))
+    setGoals((current) => ({ ...current, [key]: next }))
   }
 
   return (
     <section>
-      <h2>{t('dash.goals.heading')}</h2>
-      <div className="form-grid">
-        <NumberField
-          label={t('events.reaction')}
-          value={String(goals.reactions)}
-          onChange={(v) => update('reactions', v)}
-        />
-        <NumberField
-          label={t('events.comment')}
-          value={String(goals.comments)}
-          onChange={(v) => update('comments', v)}
-        />
-        <NumberField
-          label={t('events.connection_request')}
-          value={String(goals.connectionRequests)}
-          onChange={(v) => update('connectionRequests', v)}
-        />
-        <NumberField
-          label={t('events.message')}
-          value={String(goals.messages)}
-          onChange={(v) => update('messages', v)}
-        />
-        <NumberField
-          label={t('events.repost')}
-          value={String(goals.reposts)}
-          onChange={(v) => update('reposts', v)}
-        />
-        <NumberField
-          label={t('events.post')}
-          value={String(goals.posts)}
-          onChange={(v) => update('posts', v)}
-        />
+      <div className="section-heading">
+        <div>
+          <h2>{t('dash.goals.heading')}</h2>
+          <p>{t('dash.goals.subtitle')}</p>
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={() => void props.onRun(() => sendMessage({ kind: 'setGoals', goals }), t('dash.goals.saved'))}
-      >
-        {t('common.save')}
-      </button>
+
+      <div className="goals-editor">
+        {goalFields.map((field) => {
+          const value = goals[field.key]
+          const label = t(field.label)
+          return (
+            <div className={value === 0 ? 'goal-row is-off' : 'goal-row'} key={field.key}>
+              <div className="goal-row-info">
+                <strong>{label}</strong>
+                <small>
+                  {value === 0
+                    ? t('dash.goals.offHint')
+                    : t('dash.goals.todayCount', { count: summary[field.key] })}
+                </small>
+              </div>
+              <div className="stepper">
+                <button
+                  type="button"
+                  aria-label={t('dash.goals.decrease', { label })}
+                  disabled={value <= 0}
+                  onClick={() => update(field.key, value - 1)}
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max={GOAL_MAX}
+                  aria-label={label}
+                  value={String(value)}
+                  onChange={(e) => update(field.key, Number(e.target.value))}
+                />
+                <button
+                  type="button"
+                  aria-label={t('dash.goals.increase', { label })}
+                  disabled={value >= GOAL_MAX}
+                  onClick={() => update(field.key, value + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )
+        })}
+        <div className="goals-total">
+          <span>{t('dash.goals.total')}</span>
+          <strong>{total}</strong>
+        </div>
+      </div>
+
+      <div className="goals-footer">
+        <button
+          type="button"
+          className="primary"
+          disabled={!dirty}
+          onClick={() =>
+            void props.onRun(() => sendMessage({ kind: 'setGoals', goals }), t('dash.goals.saved'))
+          }
+        >
+          {t('common.save')}
+        </button>
+        {dirty && (
+          <>
+            <button type="button" onClick={() => setGoals(saved)}>
+              {t('dash.goals.revert')}
+            </button>
+            <em className="goals-unsaved">{t('dash.goals.unsaved')}</em>
+          </>
+        )}
+      </div>
     </section>
   )
 }
@@ -787,7 +934,7 @@ function PrivacyTab(props: {
 
       <h3>{t('dash.privacy.heading')}</h3>
       <div className="toggle-grid">
-        <label>
+        <label className="toggle-card">
           <input
             type="checkbox"
             checked={settings.privacy.storeCommentLength}
@@ -797,9 +944,12 @@ function PrivacyTab(props: {
               )
             }
           />
-          {t('dash.privacy.storeCommentLength')}
+          <span>
+            <strong>{t('dash.privacy.storeCommentLength')}</strong>
+            <small>{t('dash.privacy.storeCommentLengthHint')}</small>
+          </span>
         </label>
-        <label>
+        <label className="toggle-card">
           <input
             type="checkbox"
             checked={settings.privacy.storeCommentMeaningful}
@@ -809,9 +959,12 @@ function PrivacyTab(props: {
               )
             }
           />
-          {t('dash.privacy.storeCommentMeaningful')}
+          <span>
+            <strong>{t('dash.privacy.storeCommentMeaningful')}</strong>
+            <small>{t('dash.privacy.storeCommentMeaningfulHint')}</small>
+          </span>
         </label>
-        <label>
+        <label className="toggle-card">
           <input
             type="checkbox"
             checked={settings.privacy.storeConnectionProfileUrl}
@@ -821,9 +974,12 @@ function PrivacyTab(props: {
               )
             }
           />
-          {t('dash.privacy.storeConnectionProfileUrl')}
+          <span>
+            <strong>{t('dash.privacy.storeConnectionProfileUrl')}</strong>
+            <small>{t('dash.privacy.storeConnectionProfileUrlHint')}</small>
+          </span>
         </label>
-        <label>
+        <label className="toggle-card">
           <input
             type="checkbox"
             checked={settings.privacy.storeConnectionDisplayName}
@@ -833,7 +989,10 @@ function PrivacyTab(props: {
               )
             }
           />
-          {t('dash.privacy.storeConnectionDisplayName')}
+          <span>
+            <strong>{t('dash.privacy.storeConnectionDisplayName')}</strong>
+            <small>{t('dash.privacy.storeConnectionDisplayNameHint')}</small>
+          </span>
         </label>
       </div>
 
@@ -940,20 +1099,3 @@ function DiagnosticsTab(props: {
   )
 }
 
-function NumberField(props: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}) {
-  return (
-    <label>
-      {props.label}
-      <input
-        type="number"
-        min="0"
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-      />
-    </label>
-  )
-}

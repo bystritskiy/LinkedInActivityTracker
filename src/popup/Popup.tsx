@@ -3,7 +3,7 @@ import { dayKeyFromDate } from '../common/date'
 import { eventLabelKey, translator } from '../common/i18n'
 import { goalRows, summarizeStats } from '../common/summary'
 import type { StorageRoot } from '../common/types'
-import { exportAndDownload, loadState, openDashboard, sendMessage, subscribeState } from '../ui/chrome'
+import { loadState, openDashboard, subscribeState } from '../ui/chrome'
 
 export function Popup() {
   const [state, setState] = useState<StorageRoot | null>(null)
@@ -33,24 +33,10 @@ export function Popup() {
       t: translator(state.settings.locale),
       summary,
       goals: state.settings.goals,
-      rows: goalRows(summary, state.settings.goals),
+      rows: goalRows(summary, state.settings.goals).filter((row) => row.target > 0),
       paused: state.settings.paused,
     }
   }, [state, todayKey])
-
-  async function togglePaused(): Promise<void> {
-    if (!state) return
-    await sendMessage({ kind: 'setPaused', paused: !state.settings.paused })
-    setState(await loadState())
-  }
-
-  async function exportToday(): Promise<void> {
-    try {
-      await exportAndDownload('markdown', todayKey)
-    } catch (err) {
-      setError(String((err as Error)?.message ?? err))
-    }
-  }
 
   if (error) {
     return (
@@ -116,12 +102,6 @@ export function Popup() {
       <footer>
         <button type="button" onClick={openDashboard}>
           {vm.t('popup.openDashboard')}
-        </button>
-        <button type="button" onClick={() => void exportToday()}>
-          {vm.t('popup.exportReport')}
-        </button>
-        <button type="button" className="secondary" onClick={() => void togglePaused()}>
-          {vm.paused ? vm.t('popup.resume') : vm.t('popup.pause')}
         </button>
       </footer>
     </div>

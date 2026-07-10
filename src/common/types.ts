@@ -49,8 +49,8 @@ export type PostKind =
 export type MessageKind = 'new' | 'reply' | 'inmail' | 'unknown'
 
 // Type-specific metadata shapes. Stored under TrackedEvent.metadata. All fields
-// are optional and privacy-gated — by default the privacy-sensitive ones are
-// omitted entirely (see PrivacySettings).
+// are optional and privacy-gated. They are stored only when the corresponding
+// local privacy toggle is enabled (see PrivacySettings).
 export interface ReactionMetadata {
   reactionType?: ReactionType
   targetType?: ReactionTargetType

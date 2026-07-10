@@ -43,22 +43,23 @@ export const ru: Record<MessageKey, string> = {
   'nav.today': 'Сегодня',
   'nav.history': 'История',
   'nav.ssi': 'Аналитика',
-  'nav.goals': 'Цели',
+  'nav.goals': 'Дневные цели',
   'nav.privacy': 'Приватность',
   'nav.diagnostics': 'Диагностика',
 
   'dash.title': 'LinkedIn Activity Tracker',
+  'dash.header.trackingActive': 'Учёт активен',
   'dash.today.heading': 'Прогресс за сегодня',
-  'dash.today.events': 'События',
-  'dash.today.noEvents': 'За сегодня событий не зафиксировано.',
-  'dash.today.manualAdjust': 'Ручная корректировка',
+  'dash.today.subtitle': 'Короткая сводка по видимой активности LinkedIn за день.',
+  'dash.today.summary.completion': 'Выполнение целей',
+  'dash.today.goal.done': 'Готово',
+  'dash.today.goal.remaining': 'Осталось: {count}',
+  'dash.today.capture.heading': 'Записать метрики LinkedIn за сегодня',
+  'dash.today.capture.body':
+    'Откройте эти страницы LinkedIn один раз за день, чтобы расширение сохранило свежую аналитику локально.',
+  'dash.today.capture.open': 'Открыть',
+  'dash.today.capture.recorded': 'Записано',
   'dash.today.activeTimeLabel': 'Активное время (минуты)',
-  'dash.today.eventTime': 'Время',
-  'dash.today.eventType': 'Тип',
-  'dash.today.eventSource': 'Источник',
-  'dash.source.automatic': 'авто',
-  'dash.source.manual': 'вручную',
-
   'dash.history.heading': 'История',
   'dash.history.date': 'Дата',
   'dash.history.time': 'Время',
@@ -76,14 +77,11 @@ export const ru: Record<MessageKey, string> = {
   'dash.ssi.buildRelationships': 'Развивайте отношения',
   'dash.ssi.add': 'Добавить запись SSI',
   'dash.ssi.history': 'История наблюдений',
-  'dash.ssi.source': 'Источник',
   'dash.ssi.date': 'Дата',
   'dash.ssi.noData':
     'Записей SSI пока нет. Откройте linkedin.com/sales/ssi, чтобы расширение записало данные.',
   'dash.ssi.disclaimer':
     'Активность и SSI показаны рядом. Это только визуальное сопоставление и не означает причинно-следственной связи.',
-  'dash.analytics.hideDuplicateRecords': 'Скрывать одинаковые записи',
-
   'dash.views.heading': 'Просмотры профиля',
   'dash.views.viewers': 'Просмотревшие',
   'dash.views.rangeDays': 'Период (дней)',
@@ -107,7 +105,16 @@ export const ru: Record<MessageKey, string> = {
     'Записей пока нет. Откройте linkedin.com/dashboard/, чтобы записать агрегированные метрики dashboard.',
 
   'dash.goals.heading': 'Дневные цели',
+  'dash.goals.subtitle':
+    'Задайте дневную норму для каждого действия — из неё складывается прогресс на вкладке «Сегодня».',
   'dash.goals.saved': 'Цели сохранены.',
+  'dash.goals.todayCount': 'Сегодня: {count}',
+  'dash.goals.offHint': 'Выключено — не входит в дневную цель',
+  'dash.goals.total': 'Всего действий в день',
+  'dash.goals.unsaved': 'Есть несохранённые изменения',
+  'dash.goals.revert': 'Вернуть',
+  'dash.goals.decrease': 'Уменьшить: {label}',
+  'dash.goals.increase': 'Увеличить: {label}',
 
   'dash.privacy.heading': 'Приватность',
   'dash.privacy.notice':
@@ -118,10 +125,10 @@ export const ru: Record<MessageKey, string> = {
   'dash.privacy.sourceCode': 'Открыть исходный код',
   'dash.privacy.whatStored': 'Что хранится',
   'dash.privacy.whatStoredBody':
-    'Только метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI, суммарное число просмотров профиля и агрегированные метрики dashboard (считанные со страниц SSI / аналитики / dashboard при их открытии или введённые вручную там, где это поддержано).',
+    'Метки времени, типы действий, URL без query-параметров, агрегированные счётчики, активное время, значения SSI, суммарные просмотры профиля, агрегированные метрики dashboard и опциональные локальные детали вроде длины комментария и данных профиля для приглашений.',
   'dash.privacy.whatNotStored': 'Что никогда не хранится',
   'dash.privacy.whatNotStoredBody':
-    'Не хранятся тексты сообщений, комментариев и постов. Нет имён, email, фотографий и содержимого профилей. Нет cookies, токенов и сетевых ответов.',
+    'Не хранятся тексты сообщений, комментариев и постов. Нет email, фотографий, содержимого профилей, cookies, токенов и сетевых ответов.',
   'dash.privacy.whereStored': 'Где хранится',
   'dash.privacy.whereStoredBody':
     'Только локально в вашем браузере (chrome.storage.local). Нет backend-аккаунта, синхронизации или отправки аналитики с вашей активностью.',
@@ -136,9 +143,17 @@ export const ru: Record<MessageKey, string> = {
     'Удалить ВСЕ данные навсегда? Это действие необратимо.',
   'dash.privacy.deleted': 'Все данные удалены.',
   'dash.privacy.storeCommentLength': 'Хранить длину комментария',
+  'dash.privacy.storeCommentLengthHint':
+    'По умолчанию включено, чтобы позже можно было оценить усилие по комментариям. Сам текст не хранится.',
   'dash.privacy.storeCommentMeaningful': 'Хранить флаг «осмысленный» для комментариев',
+  'dash.privacy.storeCommentMeaningfulHint':
+    'Хранит только флаг да/нет по длине комментария, без текста комментария.',
   'dash.privacy.storeConnectionProfileUrl': 'Хранить URL профиля для приглашений',
+  'dash.privacy.storeConnectionProfileUrlHint':
+    'По умолчанию включено для детальной локальной истории приглашений. Можно выключить, если нужны только агрегаты.',
   'dash.privacy.storeConnectionDisplayName': 'Хранить отображаемое имя для приглашений',
+  'dash.privacy.storeConnectionDisplayNameHint':
+    'По умолчанию включено, чтобы история приглашений оставалась узнаваемой локально. Можно выключить, если не хотите хранить имена.',
 
   'dash.diag.heading': 'Диагностика',
   'dash.diag.version': 'Версия расширения',

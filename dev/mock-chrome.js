@@ -119,8 +119,8 @@
         follow: false, profile_view: false, company_view: false, job_view: false,
       },
       privacy: {
-        storeCommentLength: false, storeCommentMeaningful: true,
-        storeConnectionProfileUrl: false, storeConnectionDisplayName: false,
+        storeCommentLength: true, storeCommentMeaningful: true,
+        storeConnectionProfileUrl: true, storeConnectionDisplayName: true,
         meaningfulCommentMinChars: 20,
       },
       notifications: { dailyReminder: false, goalCompletion: false, reminderTime: '18:00' },

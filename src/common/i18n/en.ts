@@ -41,22 +41,23 @@ export const en = {
   'nav.today': 'Today',
   'nav.history': 'History',
   'nav.ssi': 'Analytics',
-  'nav.goals': 'Goals',
+  'nav.goals': 'Daily goals',
   'nav.privacy': 'Privacy',
   'nav.diagnostics': 'Diagnostics',
 
   'dash.title': 'LinkedIn Activity Tracker',
+  'dash.header.trackingActive': 'Tracking active',
   'dash.today.heading': 'Today’s progress',
-  'dash.today.events': 'Events',
-  'dash.today.noEvents': 'No events recorded today.',
-  'dash.today.manualAdjust': 'Manual adjustment',
+  'dash.today.subtitle': 'A quick read on today’s visible LinkedIn effort.',
+  'dash.today.summary.completion': 'Goal completion',
+  'dash.today.goal.done': 'Done',
+  'dash.today.goal.remaining': '{count} left',
+  'dash.today.capture.heading': 'Capture today’s LinkedIn metrics',
+  'dash.today.capture.body':
+    'Open these LinkedIn pages once today so the extension can save the latest analytics locally.',
+  'dash.today.capture.open': 'Open',
+  'dash.today.capture.recorded': 'Recorded',
   'dash.today.activeTimeLabel': 'Active time (minutes)',
-  'dash.today.eventTime': 'Time',
-  'dash.today.eventType': 'Type',
-  'dash.today.eventSource': 'Source',
-  'dash.source.automatic': 'auto',
-  'dash.source.manual': 'manual',
-
   'dash.history.heading': 'History',
   'dash.history.date': 'Date',
   'dash.history.time': 'Time',
@@ -74,14 +75,11 @@ export const en = {
   'dash.ssi.buildRelationships': 'Build relationships',
   'dash.ssi.add': 'Add SSI entry',
   'dash.ssi.history': 'Observation history',
-  'dash.ssi.source': 'Source',
   'dash.ssi.date': 'Date',
   'dash.ssi.noData':
     'No SSI entries yet. Open linkedin.com/sales/ssi so the extension can record it.',
   'dash.ssi.disclaimer':
     'Activity and SSI are shown side by side. This is a visual comparison only and does not imply cause and effect.',
-  'dash.analytics.hideDuplicateRecords': 'Hide duplicate records',
-
   'dash.views.heading': 'Profile viewers',
   'dash.views.viewers': 'Viewers',
   'dash.views.rangeDays': 'Period (days)',
@@ -105,7 +103,16 @@ export const en = {
     'No entries yet. Open linkedin.com/dashboard/ to record aggregate dashboard metrics.',
 
   'dash.goals.heading': 'Daily goals',
+  'dash.goals.subtitle':
+    'Set a daily target for each action. Targets drive the goal completion bar on the Today tab.',
   'dash.goals.saved': 'Goals saved.',
+  'dash.goals.todayCount': 'Today: {count}',
+  'dash.goals.offHint': 'Off — not counted toward the daily goal',
+  'dash.goals.total': 'Total actions per day',
+  'dash.goals.unsaved': 'Unsaved changes',
+  'dash.goals.revert': 'Revert',
+  'dash.goals.decrease': 'Decrease {label}',
+  'dash.goals.increase': 'Increase {label}',
 
   'dash.privacy.heading': 'Privacy',
   'dash.privacy.notice':
@@ -116,10 +123,10 @@ export const en = {
   'dash.privacy.sourceCode': 'View source code',
   'dash.privacy.whatStored': 'What is stored',
   'dash.privacy.whatStoredBody':
-    'Only timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, aggregate profile-viewer counts, and aggregate dashboard metrics (read from the SSI / analytics / dashboard pages when you open them, or entered by hand where supported).',
+    'Timestamps, action types, URLs without query parameters, aggregated counters, active time, SSI scores, aggregate profile-viewer counts, aggregate dashboard metrics, and optional local metadata such as comment length and invitation profile details.',
   'dash.privacy.whatNotStored': 'What is never stored',
   'dash.privacy.whatNotStoredBody':
-    'No message, comment or post text. No names, emails, photos or profile contents. No cookies, tokens or network responses.',
+    'No message, comment or post text. No emails, photos, profile contents, cookies, tokens or network responses.',
   'dash.privacy.whereStored': 'Where it is stored',
   'dash.privacy.whereStoredBody':
     'Only locally in your browser (chrome.storage.local). There is no backend account, sync service, or analytics upload for your activity data.',
@@ -134,9 +141,17 @@ export const en = {
     'Delete ALL tracked data permanently? This cannot be undone.',
   'dash.privacy.deleted': 'All data deleted.',
   'dash.privacy.storeCommentLength': 'Store comment length',
+  'dash.privacy.storeCommentLengthHint':
+    'On by default so you can review comment effort later. The text itself is never stored.',
   'dash.privacy.storeCommentMeaningful': 'Store “meaningful” flag for comments',
+  'dash.privacy.storeCommentMeaningfulHint':
+    'Stores only a yes/no quality signal based on length, not comment text.',
   'dash.privacy.storeConnectionProfileUrl': 'Store profile URL for invitations',
+  'dash.privacy.storeConnectionProfileUrlHint':
+    'On by default for detailed local invite history. Disable it if you prefer aggregate-only records.',
   'dash.privacy.storeConnectionDisplayName': 'Store display name for invitations',
+  'dash.privacy.storeConnectionDisplayNameHint':
+    'On by default so invite history stays recognizable locally. Disable it if you do not want names stored.',
 
   'dash.diag.heading': 'Diagnostics',
   'dash.diag.version': 'Extension version',
