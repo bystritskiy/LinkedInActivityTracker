@@ -49,9 +49,7 @@ export const en = {
   'dash.header.trackingActive': 'Tracking active',
   'dash.today.heading': 'Today’s progress',
   'dash.today.subtitle': 'A quick read on today’s visible LinkedIn effort.',
-  'dash.today.summary.completion': 'Goal completion',
   'dash.today.goal.done': 'Done',
-  'dash.today.goal.remaining': '{count} left',
   'dash.today.capture.heading': 'Capture today’s LinkedIn metrics',
   'dash.today.capture.body':
     'Open these LinkedIn pages once today so the extension can save the latest analytics locally.',
@@ -62,6 +60,9 @@ export const en = {
   'dash.history.date': 'Date',
   'dash.history.time': 'Time',
   'dash.history.empty': 'No history yet.',
+  'dash.history.actionsCount': '{count} actions',
+  'dash.history.less': 'Less',
+  'dash.history.more': 'More',
   'dash.history.profileViewers': 'Viewers',
   'dash.history.postImpressions': 'Impressions',
   'dash.history.followers': 'Followers',
@@ -104,7 +105,7 @@ export const en = {
 
   'dash.goals.heading': 'Daily goals',
   'dash.goals.subtitle':
-    'Set a daily target for each action. Targets drive the goal completion bar on the Today tab.',
+    'Set a daily target for each action. Progress shows on the Today tab.',
   'dash.goals.saved': 'Goals saved.',
   'dash.goals.todayCount': 'Today: {count}',
   'dash.goals.offHint': 'Off — not counted toward the daily goal',

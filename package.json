@@ -1,6 +1,6 @@
 {
   "name": "linkedin-activity-tracker",
-  "version": "1.0.5",
+  "version": "1.0.11",
   "description": "Local, privacy-first Chrome extension that passively logs your own LinkedIn activity. It never performs actions for you.",
   "private": true,
   "type": "module",

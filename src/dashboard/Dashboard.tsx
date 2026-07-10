@@ -38,7 +38,6 @@ const utilityTabs: Array<{ key: Tab; label: MessageKey }> = [
 
 const goalStatusKeys = {
   done: 'dash.today.goal.done',
-  remaining: 'dash.today.goal.remaining',
 } as const satisfies Record<string, MessageKey>
 
 const manualTypes = [
@@ -215,12 +214,6 @@ function TodayTab(props: {
   const t = translator(props.state.settings.locale)
   const rows = goalRows(props.summary, props.state.settings.goals)
   const goalRowsWithTargets = rows.filter((row) => row.target > 0)
-  const targetActions = goalRowsWithTargets.reduce((sum, row) => sum + row.target, 0)
-  const completedActions = goalRowsWithTargets.reduce(
-    (sum, row) => sum + Math.min(row.current, row.target),
-    0,
-  )
-  const completionRatio = targetActions > 0 ? Math.min(1, completedActions / targetActions) : 1
 
   return (
     <section>
@@ -228,16 +221,6 @@ function TodayTab(props: {
         <div>
           <h2>{t('dash.today.heading')}</h2>
           <p>{t('dash.today.subtitle')}</p>
-        </div>
-      </div>
-
-      <div className="completion-meter">
-        <div className="completion-meter-label">
-          <span>{t('dash.today.summary.completion')}</span>
-          <strong>{Math.round(completionRatio * 100)}%</strong>
-        </div>
-        <div className="completion-track" aria-hidden="true">
-          <span style={{ width: `${Math.round(completionRatio * 100)}%` }} />
         </div>
       </div>
 
@@ -251,7 +234,7 @@ function TodayTab(props: {
           >
             <div className="metric-topline">
               <span>{t(eventLabelKey(row.key))}</span>
-              <em>{goalStatusLabel(t, row.current, row.target, row.met)}</em>
+              {row.met && <em>{t(goalStatusKeys.done)}</em>}
             </div>
             <strong>
               {row.current} / {row.target}
@@ -313,14 +296,124 @@ function MetricCaptureChecklist({ state, dayKey }: { state: StorageRoot; dayKey:
   )
 }
 
-function goalStatusLabel(
-  t: (key: MessageKey, params?: Record<string, string | number>) => string,
-  current: number,
-  target: number,
-  met: boolean,
-): string {
-  if (met) return t(goalStatusKeys.done)
-  return t(goalStatusKeys.remaining, { count: target - current })
+const HEATMAP_WEEKS = 52
+
+interface HeatmapCell {
+  key: string
+  date: Date
+  count: number
+  minutes: number
+  future: boolean
+}
+
+function buildHeatmapWeeks(state: StorageRoot): { weeks: HeatmapCell[][]; max: number } {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const mondayOffset = (today.getDay() + 6) % 7
+  const start = new Date(today)
+  start.setDate(today.getDate() - mondayOffset - (HEATMAP_WEEKS - 1) * 7)
+
+  let max = 0
+  const weeks: HeatmapCell[][] = []
+  for (let w = 0; w < HEATMAP_WEEKS; w++) {
+    const col: HeatmapCell[] = []
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(start)
+      date.setDate(start.getDate() + w * 7 + d)
+      const key = dayKeyFromDate(date)
+      const day = state.days[key]
+      const s = day ? summarizeStats(day.stats) : null
+      const count = s
+        ? s.reactions + s.comments + s.connectionRequests + s.messages + s.reposts + s.posts
+        : 0
+      max = Math.max(max, count)
+      col.push({ key, date, count, minutes: s?.activeMinutes ?? 0, future: date > today })
+    }
+    weeks.push(col)
+  }
+  return { weeks, max }
+}
+
+function heatLevel(count: number, max: number): number {
+  if (count <= 0 || max <= 0) return 0
+  return Math.max(1, Math.ceil((count / max) * 4))
+}
+
+function ActivityHeatmap({ state }: { state: StorageRoot }) {
+  const locale = state.settings.locale
+  const t = translator(locale)
+  const { weeks, max } = buildHeatmapWeeks(state)
+  const intlLocale = locale === 'ru' ? 'ru-RU' : 'en-US'
+  const monthFmt = new Intl.DateTimeFormat(intlLocale, { month: 'short' })
+  const dayFmt = new Intl.DateTimeFormat(intlLocale, { weekday: 'short' })
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null)
+
+  function showTip(e: { currentTarget: HTMLElement }, cell: HeatmapCell): void {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const margin = 150
+    setTip({
+      x: Math.min(Math.max(rect.left + rect.width / 2, margin), window.innerWidth - margin),
+      y: rect.top - 8,
+      text: `${cell.key} · ${t('dash.history.actionsCount', { count: cell.count })} · ${cell.minutes} ${t('common.minutes')}`,
+    })
+  }
+
+  return (
+    <div className="heatmap-scroll">
+      <div className="heatmap">
+        <div
+          className="heatmap-months"
+          style={{ gridTemplateColumns: `repeat(${HEATMAP_WEEKS}, minmax(10px, 1fr))` }}
+        >
+          {weeks.map((col, i) => {
+            const month = col[0].date.getMonth()
+            const prev = i > 0 ? weeks[i - 1][0].date.getMonth() : -1
+            if (i > 0 && month === prev) return null
+            return (
+              <span key={col[0].key} style={{ gridColumn: `${i + 1} / span 3` }}>
+                {monthFmt.format(col[0].date)}
+              </span>
+            )
+          })}
+        </div>
+        <div className="heatmap-body">
+          <div className="heatmap-days">
+            {[0, 2, 4].map((row) => (
+              <span key={row} style={{ gridRow: row + 1 }}>
+                {dayFmt.format(weeks[0][row].date)}
+              </span>
+            ))}
+          </div>
+          <div className="heatmap-grid" onMouseLeave={() => setTip(null)}>
+            {weeks.flat().map((cell) =>
+              cell.future ? (
+                <span key={cell.key} className="hm-cell is-future" />
+              ) : (
+                <span
+                  key={cell.key}
+                  className={`hm-cell l${heatLevel(cell.count, max)}`}
+                  onMouseEnter={(e) => showTip(e, cell)}
+                  onMouseLeave={() => setTip(null)}
+                />
+              ),
+            )}
+          </div>
+        </div>
+        <div className="heatmap-legend">
+          <span>{t('dash.history.less')}</span>
+          {[0, 1, 2, 3, 4].map((l) => (
+            <i key={l} className={`hm-cell l${l}`} />
+          ))}
+          <span>{t('dash.history.more')}</span>
+        </div>
+      </div>
+      {tip && (
+        <div className="hm-tooltip" style={{ left: tip.x, top: tip.y }} role="tooltip">
+          {tip.text}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function HistoryTab({ state }: { state: StorageRoot }) {
@@ -329,10 +422,12 @@ function HistoryTab({ state }: { state: StorageRoot }) {
   return (
     <section>
       <h2>{t('dash.history.heading')}</h2>
+      <ActivityHeatmap state={state} />
       {keys.length === 0 ? (
         <p>{t('dash.history.empty')}</p>
       ) : (
-        <table>
+        <div className="table-scroll">
+        <table className="analytics-table">
           <thead>
             <tr>
               <th>{t('dash.history.date')}</th>
@@ -373,6 +468,7 @@ function HistoryTab({ state }: { state: StorageRoot }) {
             })}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   )
@@ -1081,19 +1177,21 @@ function DiagnosticsTab(props: {
       {state.diagnostics.length === 0 ? (
         <p>{t('dash.diag.empty')}</p>
       ) : (
-        <table>
-          <tbody>
-            {state.diagnostics.map((entry) => (
-              <tr key={entry.id}>
-                <td>{formatLocalDateTime24(entry.timestamp)}</td>
-                <td>{entry.level}</td>
-                <td>{entry.source}</td>
-                <td>{entry.code}</td>
-                <td>{entry.message}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll">
+          <table>
+            <tbody>
+              {state.diagnostics.map((entry) => (
+                <tr key={entry.id}>
+                  <td>{formatLocalDateTime24(entry.timestamp)}</td>
+                  <td>{entry.level}</td>
+                  <td>{entry.source}</td>
+                  <td>{entry.code}</td>
+                  <td>{entry.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )

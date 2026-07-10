@@ -1,6 +1,8 @@
 :root {
   color-scheme: light dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --bg: #f4f7fb;
   --surface: #ffffff;
   --surface-muted: #eef3f8;
@@ -42,11 +44,16 @@ button {
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    transform 120ms ease-out;
 }
 
 button:hover {
   background: var(--surface-muted);
+}
+
+button:active {
+  transform: scale(0.97);
 }
 
 button:disabled {
@@ -110,6 +117,8 @@ select {
   margin: 0 0 6px;
   font-size: 30px;
   line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .app-header p,
@@ -124,7 +133,8 @@ section > p {
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 13px;
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 .header-active-time {
@@ -262,6 +272,14 @@ section h2 {
   margin: 0 0 14px;
   font-size: 22px;
   line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.app-header p,
+.section-heading p,
+section > p {
+  text-wrap: pretty;
 }
 
 section h3 {
@@ -310,48 +328,12 @@ section h3 {
   padding: 14px;
 }
 
+.metric {
+  transition: border-color 200ms ease;
+}
+
 .today-heading {
   align-items: center;
-}
-
-.completion-meter {
-  margin: 8px 0 16px;
-}
-
-.completion-meter-label {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  max-width: 760px;
-  margin-bottom: 8px;
-}
-
-.completion-meter-label span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.completion-meter-label strong {
-  font-size: 18px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.completion-track {
-  width: min(760px, 100%);
-  height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--surface-muted);
-}
-
-.completion-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
 }
 
 .capture-checklist {
@@ -359,7 +341,6 @@ section h3 {
   grid-template-columns: minmax(220px, 0.9fr) minmax(320px, 1.4fr);
   gap: 14px;
   align-items: start;
-  max-width: 900px;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface));
@@ -448,6 +429,7 @@ section h3 {
 
 .metric strong {
   margin-top: 4px;
+  font-family: var(--font-display);
   font-size: 22px;
   font-variant-numeric: tabular-nums;
 }
@@ -553,8 +535,9 @@ section h3 {
 
 .dashboard-snapshot header span {
   color: var(--muted);
+  font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .dashboard-snapshot-grid {
@@ -580,6 +563,7 @@ section h3 {
 .dashboard-snapshot-metric strong {
   display: block;
   margin-top: 6px;
+  font-family: var(--font-display);
   font-size: 22px;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
@@ -607,6 +591,7 @@ section h3 {
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toolbar {
@@ -634,7 +619,6 @@ section h3 {
 }
 
 .goals-editor {
-  max-width: 640px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -744,6 +728,7 @@ section h3 {
 }
 
 .goals-total strong {
+  font-family: var(--font-display);
   font-size: 18px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -841,6 +826,134 @@ section h3 {
   width: auto;
 }
 
+.heatmap-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  margin-bottom: 16px;
+  padding: 14px 16px;
+}
+
+.heatmap {
+  --hm-gap: 3px;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-width: 720px;
+}
+
+.heatmap-months {
+  display: grid;
+  column-gap: var(--hm-gap);
+  margin-left: calc(30px + 8px);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.heatmap-months span {
+  white-space: nowrap;
+}
+
+.heatmap-body {
+  display: flex;
+  gap: 8px;
+}
+
+.heatmap-days {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: var(--hm-gap);
+  width: 30px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.heatmap-days span {
+  align-self: center;
+}
+
+.heatmap-grid {
+  display: grid;
+  flex: 1;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, auto);
+  grid-auto-columns: minmax(10px, 1fr);
+  gap: var(--hm-gap);
+}
+
+.hm-cell {
+  width: auto;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 3px;
+  background: var(--surface-muted);
+}
+
+.heatmap-legend .hm-cell {
+  width: 12px;
+  height: 12px;
+}
+
+.heatmap-grid .hm-cell:not(.is-future):hover {
+  outline: 1px solid color-mix(in srgb, var(--text) 35%, transparent);
+  outline-offset: -1px;
+}
+
+.hm-tooltip {
+  position: fixed;
+  z-index: 10;
+  transform: translate(-50%, -100%);
+  border: 1px solid #405166;
+  border-radius: 6px;
+  background: #111a23;
+  color: #edf2f7;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  padding: 7px 9px;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.hm-cell.is-future {
+  visibility: hidden;
+}
+
+.hm-cell.l1 {
+  background: color-mix(in srgb, var(--success) 30%, var(--surface-muted));
+}
+
+.hm-cell.l2 {
+  background: color-mix(in srgb, var(--success) 55%, var(--surface-muted));
+}
+
+.hm-cell.l3 {
+  background: color-mix(in srgb, var(--success) 78%, var(--surface-muted));
+}
+
+.hm-cell.l4 {
+  background: var(--success);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--hm-gap);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.heatmap-legend span {
+  margin-inline: 4px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -873,6 +986,10 @@ td {
   padding: 11px 12px;
   text-align: left;
   vertical-align: top;
+}
+
+td {
+  font-variant-numeric: tabular-nums;
 }
 
 th {
@@ -1004,7 +1121,9 @@ button.danger {
   }
 
   .tabs button.active,
-  button.primary {
+  button.primary,
+  .capture-checklist a,
+  .goal-card.is-complete .metric-topline em {
     color: #07111c;
   }
 
@@ -1019,5 +1138,18 @@ button.danger {
   .auto-record-hint a,
   .text-link {
     color: #8ec5ff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+
+  button:active {
+    transform: none;
   }
 }

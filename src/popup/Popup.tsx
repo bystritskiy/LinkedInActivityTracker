@@ -29,11 +29,12 @@ export function Popup() {
     const day = state.days[todayKey]
     const stats = day?.stats ?? { dayKey: todayKey, activeSeconds: 0, counters: {} }
     const summary = summarizeStats(stats)
+    const rows = goalRows(summary, state.settings.goals).filter((row) => row.target > 0)
     return {
       t: translator(state.settings.locale),
       summary,
       goals: state.settings.goals,
-      rows: goalRows(summary, state.settings.goals).filter((row) => row.target > 0),
+      rows,
       paused: state.settings.paused,
     }
   }, [state, todayKey])
@@ -100,7 +101,7 @@ export function Popup() {
       </div>
 
       <footer>
-        <button type="button" onClick={openDashboard}>
+        <button type="button" className="primary" onClick={openDashboard}>
           {vm.t('popup.openDashboard')}
         </button>
       </footer>

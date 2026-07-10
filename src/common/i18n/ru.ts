@@ -51,9 +51,7 @@ export const ru: Record<MessageKey, string> = {
   'dash.header.trackingActive': 'Учёт активен',
   'dash.today.heading': 'Прогресс за сегодня',
   'dash.today.subtitle': 'Короткая сводка по видимой активности LinkedIn за день.',
-  'dash.today.summary.completion': 'Выполнение целей',
   'dash.today.goal.done': 'Готово',
-  'dash.today.goal.remaining': 'Осталось: {count}',
   'dash.today.capture.heading': 'Записать метрики LinkedIn за сегодня',
   'dash.today.capture.body':
     'Откройте эти страницы LinkedIn один раз за день, чтобы расширение сохранило свежую аналитику локально.',
@@ -64,6 +62,9 @@ export const ru: Record<MessageKey, string> = {
   'dash.history.date': 'Дата',
   'dash.history.time': 'Время',
   'dash.history.empty': 'Истории пока нет.',
+  'dash.history.actionsCount': 'Действий: {count}',
+  'dash.history.less': 'Меньше',
+  'dash.history.more': 'Больше',
   'dash.history.profileViewers': 'Просмотры',
   'dash.history.postImpressions': 'Показы',
   'dash.history.followers': 'Подписчики',
@@ -106,7 +107,7 @@ export const ru: Record<MessageKey, string> = {
 
   'dash.goals.heading': 'Дневные цели',
   'dash.goals.subtitle':
-    'Задайте дневную норму для каждого действия — из неё складывается прогресс на вкладке «Сегодня».',
+    'Задайте дневную норму для каждого действия — прогресс виден на вкладке «Сегодня».',
   'dash.goals.saved': 'Цели сохранены.',
   'dash.goals.todayCount': 'Сегодня: {count}',
   'dash.goals.offHint': 'Выключено — не входит в дневную цель',
