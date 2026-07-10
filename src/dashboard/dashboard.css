@@ -520,6 +520,26 @@ td.ssi-col {
   background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 }
 
+.health-summary {
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.health-summary.ok span {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.health-summary.warn span {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.info-grid article.health-problem {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+}
+
 .auto-record-hint a {
   color: var(--accent);
   text-decoration: none;

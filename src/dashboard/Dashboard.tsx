@@ -759,6 +759,46 @@ function AutoRecordHeading(props: {
   )
 }
 
+function SelectorHealthSummary({ state }: { state: StorageRoot }) {
+  const t = translator(state.settings.locale)
+  const entries = Object.entries(state.selectorHealth)
+  const problems = entries.filter(([, h]) => h.status !== 'working')
+  const lastChecked = entries
+    .map(([, h]) => h.lastCheckedAt ?? h.lastConfirmedAt)
+    .filter((v): v is string => Boolean(v))
+    .sort()
+    .at(-1)
+
+  if (entries.length === 0) {
+    return <p className="health-summary">{t('dash.diag.noHealthData')}</p>
+  }
+  if (problems.length === 0) {
+    return (
+      <p className="health-summary ok">
+        <span aria-hidden="true">✓</span> {t('dash.diag.allWorking')}
+        {lastChecked && ` · ${t('dash.diag.lastCheck')} ${formatLocalDateTime24(lastChecked)}`}
+      </p>
+    )
+  }
+  return (
+    <>
+      <p className="health-summary warn">
+        <span aria-hidden="true">!</span> {t('dash.diag.issues')}
+        {lastChecked && ` · ${t('dash.diag.lastCheck')} ${formatLocalDateTime24(lastChecked)}`}
+      </p>
+      <div className="info-grid">
+        {problems.map(([key, health]) => (
+          <article key={key} className="health-problem">
+            <h3>{key}</h3>
+            <p>{t(`status.${health.status}` as MessageKey)}</p>
+            {health.note && <p>{health.note}</p>}
+          </article>
+        ))}
+      </div>
+    </>
+  )
+}
+
 function Trend({ delta }: { delta: number | undefined }) {
   if (delta === undefined || delta === 0) return null
   const up = delta > 0
@@ -1220,15 +1260,7 @@ function DiagnosticsTab(props: {
         </div>
       </dl>
       <h3>{t('dash.diag.selectorHealth')}</h3>
-      <div className="info-grid">
-        {Object.entries(state.selectorHealth).map(([key, health]) => (
-          <article key={key}>
-            <h3>{key}</h3>
-            <p>{t(`status.${health.status}` as MessageKey)}</p>
-            {health.note && <p>{health.note}</p>}
-          </article>
-        ))}
-      </div>
+      <SelectorHealthSummary state={state} />
       <h3>{t('dash.diag.log')}</h3>
       {state.diagnostics.length === 0 ? (
         <p>{t('dash.diag.empty')}</p>
