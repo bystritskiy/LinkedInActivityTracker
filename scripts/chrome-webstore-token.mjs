@@ -31,7 +31,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(200, { "Content-Type": "text/html" });
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
   res.end("<h1>Done — return to the terminal.</h1>");
   server.close();
 
