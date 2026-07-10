@@ -438,7 +438,7 @@ function HistoryTab({ state }: { state: StorageRoot }) {
               <th>{t('events.message')}</th>
               <th>{t('events.repost')}</th>
               <th>{t('events.post')}</th>
-              <th>SSI</th>
+              <th className="ssi-col">SSI</th>
               <th>{t('dash.history.profileViewers')}</th>
               <th>{t('dash.history.postImpressions')}</th>
               <th>{t('dash.history.followers')}</th>
@@ -446,8 +446,15 @@ function HistoryTab({ state }: { state: StorageRoot }) {
             </tr>
           </thead>
           <tbody>
-            {keys.map((key) => {
+            {keys.map((key, i) => {
               const s = summarizeStats(state.days[key].stats)
+              const prevSsi =
+                s.ssi != null
+                  ? keys
+                      .slice(i + 1)
+                      .map((k) => summarizeStats(state.days[k].stats).ssi)
+                      .find((v) => v != null)
+                  : undefined
               return (
                 <tr key={key}>
                   <td>{key}</td>
@@ -458,7 +465,10 @@ function HistoryTab({ state }: { state: StorageRoot }) {
                   <td>{s.messages}</td>
                   <td>{s.reposts}</td>
                   <td>{s.posts}</td>
-                  <td>{s.ssi ?? '-'}</td>
+                  <td className="ssi-col">
+                    {s.ssi ?? '-'}
+                    <Trend delta={s.ssi != null && prevSsi != null ? s.ssi - prevSsi : undefined} />
+                  </td>
                   <td>{s.profileViewers ?? '-'}</td>
                   <td>{s.postImpressions ?? '-'}</td>
                   <td>{s.followers ?? '-'}</td>
@@ -574,6 +584,14 @@ function SsiTab(props: {
           label={t('dash.ssi.total')}
           value={latestSSI?.total}
           meta={latestSSI?.timestamp ? formatLocalDateTime24(latestSSI.timestamp) : undefined}
+          delta={
+            visibleEntries.length > 1 &&
+            visibleEntries[0].total !== undefined &&
+            visibleEntries[1].total !== undefined
+              ? visibleEntries[0].total - visibleEntries[1].total
+              : undefined
+          }
+          highlight
         />
         <MetricCard
           label={t('dash.views.viewers')}
@@ -624,7 +642,7 @@ function SsiTab(props: {
             <thead>
               <tr>
                 <th>{t('dash.ssi.date')}</th>
-                <th>{t('dash.ssi.total')}</th>
+                <th className="ssi-col">{t('dash.ssi.total')}</th>
                 <th>{t('dash.ssi.professionalBrand')}</th>
                 <th>{t('dash.ssi.findRightPeople')}</th>
                 <th>{t('dash.ssi.engageWithInsights')}</th>
@@ -632,16 +650,26 @@ function SsiTab(props: {
               </tr>
             </thead>
             <tbody>
-              {visibleEntries.map((e, i) => (
+              {visibleEntries.map((e, i) => {
+                const prev = visibleEntries[i + 1]
+                const delta =
+                  prev && e.total !== undefined && prev.total !== undefined
+                    ? e.total - prev.total
+                    : undefined
+                return (
                 <tr key={`${e.timestamp}-${i}`}>
                   <td>{e.timestamp ? formatLocalDateTime24(e.timestamp) : '-'}</td>
-                  <td>{formatMetricValue(e.total)}</td>
+                  <td className="ssi-col">
+                    {formatMetricValue(e.total)}
+                    <Trend delta={delta} />
+                  </td>
                   <td>{formatMetricValue(e.professionalBrand)}</td>
                   <td>{formatMetricValue(e.findRightPeople)}</td>
                   <td>{formatMetricValue(e.engageWithInsights)}</td>
                   <td>{formatMetricValue(e.buildRelationships)}</td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -718,24 +746,48 @@ function AutoRecordHeading(props: {
       ? ', чтобы расширение записало данные'
       : ' so the extension can record it'
   return (
-    <h3>
-      {props.title}{' '}
-      <span className="auto-record-hint">
-        ({before}
+    <>
+      <h3>{props.title}</h3>
+      <p className="auto-record-hint">
+        {before}
         <a href={props.href} target="_blank" rel="noreferrer">
           {props.label}
         </a>
-        {after})
-      </span>
-    </h3>
+        {after}
+      </p>
+    </>
   )
 }
 
-function MetricCard(props: { label: string; value: number | string | undefined; meta?: string }) {
+function Trend({ delta }: { delta: number | undefined }) {
+  if (delta === undefined || delta === 0) return null
+  const up = delta > 0
+  const rounded = Math.round(delta * 10) / 10
   return (
-    <article className="metric analytics-card">
+    <span
+      className={`trend ${up ? 'up' : 'down'}`}
+      title={`${up ? '+' : ''}${rounded}`}
+      aria-label={`${up ? '+' : ''}${rounded}`}
+    >
+      {up ? '▲' : '▼'}
+    </span>
+  )
+}
+
+function MetricCard(props: {
+  label: string
+  value: number | string | undefined
+  meta?: string
+  delta?: number
+  highlight?: boolean
+}) {
+  return (
+    <article className={`metric analytics-card${props.highlight ? ' metric-primary' : ''}`}>
       <span>{props.label}</span>
-      <strong>{formatMetricValue(props.value)}</strong>
+      <strong>
+        {formatMetricValue(props.value)}
+        <Trend delta={props.delta} />
+      </strong>
       {props.meta && <em>{props.meta}</em>}
     </article>
   )
